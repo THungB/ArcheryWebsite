@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Launch Full Stack",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "serverReadyAction": {
+        "pattern": "Now listening on: https?://localhost:([0-9]+)",
+        "uriFormat": "http://localhost:%s",
+        "action": "debugWithChrome"
+      }
+    }
+  ]
+}

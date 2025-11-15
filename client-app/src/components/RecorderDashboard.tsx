@@ -1,14 +1,15 @@
-import { ClipboardCheck, Users, Trophy, CheckCircle, AlertCircle, LogOut, Shield } from 'lucide-react';
+import { Users, Trophy, CheckCircle, AlertCircle, LogOut, Shield, FileText, UserCheck } from 'lucide-react';
+import { PageLayout, Header, MainContent, CardGrid } from './layout/PageLayout';
+import { StatCard } from './ui/stat-card';
 import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Badge } from './ui/badge';
-import { ArcherManagement } from './ArcherManagement';
-import { CompetitionManagement } from './CompetitionManagement';
+import ArcherManagement from './ArcherManagement';
+import CompetitionManagement from './CompetitionManagement';
 import { ScoreApproval } from './ScoreApproval';
 import { AdminPanel } from './AdminPanel';
 import { NotificationsPanel } from './NotificationsPanel';
-
 interface RecorderDashboardProps {
   username: string;
   onLogout: () => void;
@@ -18,123 +19,104 @@ export function RecorderDashboard({ username, onLogout }: RecorderDashboardProps
   const isAdmin = username === 'Admin';
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 ${isAdmin ? 'bg-purple-100' : 'bg-green-100'} rounded-full flex items-center justify-center`}>
-              {isAdmin ? (
-                <Shield className="w-6 h-6 text-purple-600" />
-              ) : (
-                <ClipboardCheck className="w-6 h-6 text-green-600" />
-              )}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2>{isAdmin ? 'Administrator Portal' : 'Recorder Portal'}</h2>
-                {isAdmin && (
-                  <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
-                    Admin
-                  </Badge>
-                )}
-              </div>
-              <p className="text-gray-600">Competition Management</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificationsPanel userRole="recorder" />
-            <Button variant="outline" onClick={onLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
-            </Button>
-          </div>
+    <PageLayout>
+      <Header
+        title={isAdmin ? 'Administrator Portal' : 'Recorder Portal'}
+        description="Competition Management"
+      >
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <Badge variant="outline" className="bg-purple-100 text-purple-800 border-purple-300">
+              Admin
+            </Badge>
+          )}
+          <NotificationsPanel userRole="recorder" />
+          <Button variant="outline" onClick={onLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Sign out
+          </Button>
         </div>
-      </header>
+      </Header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <MainContent>
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600">Total Archers</p>
-                  <h3>156</h3>
-                </div>
-                <Users className="w-8 h-8 text-blue-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600">Active Competitions</p>
-                  <h3>3</h3>
-                </div>
-                <Trophy className="w-8 h-8 text-yellow-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600">Pending Approvals</p>
-                  <h3>12</h3>
-                </div>
-                <AlertCircle className="w-8 h-8 text-orange-600" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-600">Approved Today</p>
-                  <h3>28</h3>
-                </div>
-                <CheckCircle className="w-8 h-8 text-green-600" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <CardGrid cols={4} className="mb-8">
+          <StatCard
+            title="Pending Approvals"
+            value="12"
+            icon={<AlertCircle className="h-5 w-5" />}
+            trend={{ value: '+3 new', isPositive: false }}
+            className="border-l-4 border-yellow-400"
+          />
+          <StatCard
+            title="Archers Registered"
+            value="48"
+            icon={<Users className="h-5 w-5" />}
+            trend={{ value: '+5%', isPositive: true }}
+            className="border-l-4 border-blue-400"
+          />
+          <StatCard
+            title="Scores Recorded"
+            value="156"
+            icon={<CheckCircle className="h-5 w-5" />}
+            description="This month"
+            className="border-l-4 border-green-400"
+          />
+          <StatCard
+            title="Active Competitions"
+            value="3"
+            icon={<Trophy className="h-5 w-5" />}
+            className="border-l-4 border-purple-400"
+          />
+        </CardGrid>
 
         {/* Main Tabs */}
-        <Tabs defaultValue={isAdmin ? "admin" : "approvals"} className="space-y-4">
-          <TabsList>
-            {isAdmin && (
-              <TabsTrigger value="admin">
-                <Shield className="w-4 h-4 mr-2" />
-                Admin Panel
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="approvals">Score Approvals</TabsTrigger>
-            <TabsTrigger value="competitions">Competitions</TabsTrigger>
-            <TabsTrigger value="archers">Archers</TabsTrigger>
-          </TabsList>
+        <Card>
+          <CardHeader className="px-6 pt-6 pb-2">
+            <CardTitle>Competition Management</CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 pt-0">
+            <Tabs defaultValue="scores" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="scores" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Score Approval
+                </TabsTrigger>
+                <TabsTrigger value="archers" className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4" />
+                  Archers
+                </TabsTrigger>
+                <TabsTrigger value="competitions" className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4" />
+                  Competitions
+                </TabsTrigger>
+                {isAdmin && (
+                  <TabsTrigger value="admin" className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Admin
+                  </TabsTrigger>
+                )}
+              </TabsList>
 
-          {isAdmin && (
-            <TabsContent value="admin">
-              <AdminPanel />
-            </TabsContent>
-          )}
-
-          <TabsContent value="approvals">
-            <ScoreApproval />
-          </TabsContent>
-
-          <TabsContent value="competitions">
-            <CompetitionManagement />
-          </TabsContent>
-
-          <TabsContent value="archers">
-            <ArcherManagement />
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+              <TabsContent value="scores" className="space-y-4">
+                <ScoreApproval />
+              </TabsContent>
+              <TabsContent value="archers" className="space-y-4">
+                <ArcherManagement />
+              </TabsContent>
+              <TabsContent value="competitions" className="space-y-4">
+                <CompetitionManagement />
+              </TabsContent>
+              {isAdmin && (
+                <TabsContent value="admin" className="space-y-4">
+                  <AdminPanel />
+                </TabsContent>
+              )}
+            </Tabs>
+          </CardContent>
+        </Card>
+      </MainContent>
+    </PageLayout>
   );
 }

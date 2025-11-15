@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "start": "concurrently \"cd client-app && npm run dev\" \"dotnet run\"",
+    "dev": "concurrently \"cd client-app && npm run dev\" \"dotnet watch run\"",
+    "build": "cd client-app && npm run build && dotnet publish -c Release -o ./publish"
+  },
   "dependencies": {
     "@radix-ui/react-checkbox": "^1.3.3",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -17,5 +22,8 @@
     "lucide-react": "^0.553.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.0.0"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
