@@ -60,14 +60,21 @@ namespace ArcheryWebsite.Controllers
         {
             try
             {
-                // Validation
+                // Validation Name
                 if (string.IsNullOrWhiteSpace(archer.FirstName) || 
                     string.IsNullOrWhiteSpace(archer.LastName))
                 {
                     return BadRequest(new { message = "First name and last name are required" });
                 }
 
-                // Email validation
+                // Validate Gender matches the Database Enum
+                var validGenders = new[] { "Male", "Female", "Other" };
+                if (!validGenders.Contains(archer.Gender))
+                {
+                    return BadRequest(new { message = "Gender must be 'Male', 'Female', or 'Other'." });
+                }
+
+                // Validation Email 
                 if (!string.IsNullOrWhiteSpace(archer.Email) && 
                     !archer.Email.Contains("@"))
                 {
