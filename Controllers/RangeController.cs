@@ -1,3 +1,7 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using ArcheryWebsite.Models;
+
 namespace ArcheryWebsite.Controllers
 {
     [Route("api/[controller]")]
@@ -13,7 +17,7 @@ namespace ArcheryWebsite.Controllers
 
         // GET: api/Range
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Range>>> GetRanges()
+        public async Task<ActionResult<IEnumerable<Models.Range>>> GetRanges()
         {
             try
             {
@@ -30,7 +34,7 @@ namespace ArcheryWebsite.Controllers
 
         // GET: api/Range/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Range>> GetRange(int id)
+        public async Task<ActionResult<Models.Range>> GetRange(int id)
         {
             try
             {
@@ -51,7 +55,7 @@ namespace ArcheryWebsite.Controllers
 
         // POST: api/Range
         [HttpPost]
-        public async Task<ActionResult<Range>> CreateRange(Range range)
+        public async Task<ActionResult<Models.Range>> CreateRange(Models.Range range)
         {
             try
             {
@@ -84,7 +88,7 @@ namespace ArcheryWebsite.Controllers
 
         // PUT: api/Range/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateRange(int id, Range range)
+        public async Task<IActionResult> UpdateRange(int id, Models.Range range)
         {
             if (id != range.RangeId)
             {
@@ -137,7 +141,7 @@ namespace ArcheryWebsite.Controllers
 
         // GET: api/Range/distance/70
         [HttpGet("distance/{meters}")]
-        public async Task<ActionResult<IEnumerable<Range>>> GetRangesByDistance(int meters)
+        public async Task<ActionResult<IEnumerable<Models.Range>>> GetRangesByDistance(int meters)
         {
             try
             {

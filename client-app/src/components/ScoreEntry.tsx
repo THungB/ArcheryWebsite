@@ -12,12 +12,48 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
     const [round, setRound] = useState('');
     const [distance, setDistance] = useState('');
     const [scores, setScores] = useState<string[]>(Array(6).fill(''));
+    const [hasInvalidScore, setHasInvalidScore] = useState(false);
     const [notes, setNotes] = useState('');
 
     const handleScoreChange = (index: number, value: string) => {
-        const newScores = [...scores];
-        newScores[index] = value;
-        setScores(newScores);
+        // Only allow empty string or numbers
+        if (value === '' || /^[0-9]+$/.test(value)) {
+            const numValue = value === '' ? 0 : parseInt(value, 10);
+            
+            // If value is empty or valid (0-60), update the score
+            if (value === '' || (numValue >= 0 && numValue <= 60)) {
+                const newScores = [...scores];
+                newScores[index] = value;
+                setScores(newScores);
+                
+                // Check if any score is invalid
+                const invalid = newScores.some(score => {
+                    const scoreNum = score === '' ? 0 : parseInt(score, 10);
+                    return scoreNum < 0 || scoreNum > 60;
+                });
+                setHasInvalidScore(invalid);
+            }
+        }
+    };
+
+    // Prevent invalid key presses (e, +, -, etc.)
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
+        if (
+            [
+                'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+                'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'
+            ].includes(e.key) ||
+            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            (e.ctrlKey === true && ['a', 'c', 'v', 'x'].includes(e.key)) ||
+            // Allow: home, end
+            (e.key >= '0' && e.key <= '9')
+        ) {
+            // let it happen, don't do anything
+            return;
+        }
+        // Prevent the default action for all other keys
+        e.preventDefault();
     };
 
     const calculateTotal = () => {
@@ -155,7 +191,9 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
                                 <div className="w-1 h-5 bg-green-600 rounded-full"></div>
                                 End Scores (6 ends)
                             </h3>
-                            <span className="text-sm text-gray-500 dark:text-gray-400">Enter 0-60 points per end</span>
+                            <span className={`text-sm ${hasInvalidScore ? 'text-red-500 font-medium' : 'text-gray-500 dark:text-gray-400'}`}>
+                                Enter 0-60 points per end{hasInvalidScore ? ' (invalid score)' : ''}
+                            </span>
                         </div>
 
                         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
@@ -167,18 +205,25 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
                                     >
                                         End {index + 1}
                                     </label>
-                                    <input
-                                        id={`end-${index + 1}`}
-                                        type="number"
-                                        min="0"
-                                        max="60"
-                                        value={score}
-                                        onChange={(e) => handleScoreChange(index, e.target.value)}
-                                        className="w-full px-3 py-3 text-center text-lg font-semibold border-2 border-gray-300 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
-                                        placeholder="0"
-                                        inputMode="numeric"
-                                        aria-label={`Score for end ${index + 1}`}
-                                    />
+                                    <div className="relative">
+                                        <input
+                                            id={`end-${index + 1}`}
+                                            type="number"
+                                            min="0"
+                                            max="60"
+                                            value={score}
+                                            onChange={(e) => handleScoreChange(index, e.target.value)}
+                                            onKeyDown={handleKeyDown}
+                                            className={`w-full px-3 py-3 text-center text-lg font-semibold border-2 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100 ${
+                                                hasInvalidScore && scores[index] ? 'border-red-500 dark:border-red-500' : 'border-gray-300 dark:border-gray-700'
+                                            }`}
+                                            placeholder="0"
+                                            inputMode="numeric"
+                                            aria-label={`Score for end ${index + 1}`}
+                                            aria-invalid={hasInvalidScore}
+                                            maxLength={2}
+                                        />
+                                    </div>
                                 </div>
                             ))}
                         </div>

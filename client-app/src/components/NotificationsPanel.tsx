@@ -206,11 +206,11 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
+      <PopoverContent className="w-96 p-0 bg-white" align="end">
         <Tabs defaultValue="all" className="w-full">
           <div className="p-4 border-b">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="flex items-center gap-2">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Bell className="w-5 h-5" />
                 Notifications
               </h3>
@@ -260,23 +260,23 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                   {notifications.map((notification) => (
                     <Card 
                       key={notification.id}
-                      className={`${!notification.read ? getPriorityColor(notification.priority) : 'border-l-4 border-l-gray-300'} cursor-pointer hover:shadow-md transition-shadow`}
+                      className={`${!notification.read ? getPriorityColor(notification.priority) : 'border-l-4 border-l-gray-300'} cursor-pointer hover:shadow-md transition-shadow group`}
                       onClick={() => markAsRead(notification.id)}
                     >
                       <CardContent className="p-3">
                         <div className="flex items-start gap-3">
-                          <div className="mt-0.5">
+                          <div className="mt-0.5 flex-shrink-0">
                             {getNotificationIcon(notification.type)}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2 mb-1">
-                              <p className={`${!notification.read ? 'font-semibold' : ''}`}>
+                              <p className={`text-sm ${!notification.read ? 'font-semibold' : 'font-normal'}`}>
                                 {notification.title}
                               </p>
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                                className="h-6 w-6 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   deleteNotification(notification.id);
@@ -285,7 +285,7 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                                 <X className="w-4 h-4" />
                               </Button>
                             </div>
-                            <p className="text-sm text-gray-600 mb-2">
+                            <p className="text-sm text-gray-600 mb-2 leading-relaxed">
                               {notification.message}
                             </p>
                             <div className="flex items-center justify-between">
@@ -314,7 +314,7 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <Settings className="w-5 h-5" />
-                  <h4>Notification Preferences</h4>
+                  <h4 className="font-semibold">Notification Preferences</h4>
                 </div>
                 <p className="text-sm text-gray-600">
                   Choose which notifications you want to receive
@@ -322,12 +322,12 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
               </div>
 
               <div className="space-y-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="records" className="cursor-pointer">
+                    <Label htmlFor="records" className="cursor-pointer font-medium">
                       Personal Records
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mt-0.5">
                       Notify when you set new personal bests
                     </p>
                   </div>
@@ -340,12 +340,12 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="scoreApprovals" className="cursor-pointer">
+                    <Label htmlFor="scoreApprovals" className="cursor-pointer font-medium">
                       Score Approvals
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mt-0.5">
                       {userRole === 'archer' 
                         ? 'Notify when scores are approved or rejected'
                         : 'Notify when new scores need approval'
@@ -361,12 +361,12 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="competitions" className="cursor-pointer">
+                    <Label htmlFor="competitions" className="cursor-pointer font-medium">
                       Competitions
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mt-0.5">
                       Updates about new and upcoming competitions
                     </p>
                   </div>
@@ -379,12 +379,12 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="achievements" className="cursor-pointer">
+                    <Label htmlFor="achievements" className="cursor-pointer font-medium">
                       Achievements
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mt-0.5">
                       Milestones and special accomplishments
                     </p>
                   </div>
@@ -397,12 +397,12 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
                   />
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <Label htmlFor="systemUpdates" className="cursor-pointer">
+                    <Label htmlFor="systemUpdates" className="cursor-pointer font-medium">
                       System Updates
                     </Label>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 mt-0.5">
                       Important system announcements
                     </p>
                   </div>
