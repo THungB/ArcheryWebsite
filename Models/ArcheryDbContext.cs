@@ -35,9 +35,12 @@ public partial class ArcheryDbContext : DbContext
     public virtual DbSet<Score> Scores { get; set; }
 
     public virtual DbSet<Stagingscore> Stagingscores { get; set; }
+    public virtual DbSet<RoundEquivalence> RoundEquivalences { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder
             .UseCollation("utf8mb4_unicode_ci")
             .HasCharSet("utf8mb4");
@@ -92,8 +95,11 @@ public partial class ArcheryDbContext : DbContext
             entity.Property(e => e.CompName)
                 .HasMaxLength(255)
                 .HasColumnName("comp_name");
-            entity.Property(e => e.EndDate).HasColumnName("end_date");
             entity.Property(e => e.StartDate).HasColumnName("start_date");
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
+            entity.Property(e => e.IsClubChampionship)
+                .HasColumnName("is_club_championship")
+                .HasDefaultValue(false);
         });
 
         modelBuilder.Entity<End>(entity =>
@@ -159,6 +165,11 @@ public partial class ArcheryDbContext : DbContext
             entity.Property(e => e.RoundName)
                 .HasMaxLength(100)
                 .HasColumnName("round_name");
+            entity.Property(e => e.ValidFrom).HasColumnName("valid_from");
+            entity.Property(e => e.ValidTo).HasColumnName("valid_to");
+            entity.Property(e => e.RoundFamilyCode)
+                .HasMaxLength(50)
+                .HasColumnName("round_family_code");
         });
 
         modelBuilder.Entity<Roundrange>(entity =>
@@ -260,6 +271,25 @@ public partial class ArcheryDbContext : DbContext
                 .HasForeignKey(d => d.RoundId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("stagingscore_ibfk_2");
+        });
+        modelBuilder.Entity<RoundEquivalence>(entity =>
+        {
+            entity.ToTable("round_equivalence");
+            entity.HasKey(e => e.EquivalenceId);
+
+            entity.Property(e => e.EquivalenceId).HasColumnName("equivalence_id");
+            entity.Property(e => e.RoundId).HasColumnName("round_id");
+            entity.Property(e => e.EquivalentRoundId).HasColumnName("equivalent_round_id");
+
+            entity.HasOne(d => d.Round)
+                .WithMany(p => p.EquivalentRoundDefinitions)
+                .HasForeignKey(d => d.RoundId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.EquivalentRound)
+                .WithMany(p => p.EquivalentRoundTargets)
+                .HasForeignKey(d => d.EquivalentRoundId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         OnModelCreatingPartial(modelBuilder);
