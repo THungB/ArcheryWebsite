@@ -108,55 +108,44 @@ namespace ArcheryWebsite.Controllers
         {
             try
             {
-                // Validate that required IDs are provided
-                if (dto.ArcherId <= 0)
+                // 1. Validation cơ bản
+                if (dto.ArcherId <= 0 || dto.RoundId <= 0 || dto.EquipmentId <= 0)
+                    return BadRequest(new { message = "Invalid IDs provided" });
+
+                if (dto.Arrows == null || dto.Arrows.Length == 0)
+                    return BadRequest(new { message = "Arrow scores are required" });
+
+                // 2. Tính toán tổng điểm từ mảng mũi tên (Server-side validation)
+                int calculatedTotal = 0;
+                foreach (var arrow in dto.Arrows)
                 {
-                    return BadRequest(new { message = "ArcherId must be provided and greater than 0" });
+                    string cleanArrow = arrow.ToUpper().Trim();
+                    if (cleanArrow == "X" || cleanArrow == "10") calculatedTotal += 10;
+                    else if (cleanArrow == "M") calculatedTotal += 0;
+                    else if (int.TryParse(cleanArrow, out int val))
+                    {
+                        if (val < 0 || val > 10) return BadRequest(new { message = $"Invalid arrow value: {val}" });
+                        calculatedTotal += val;
+                    }
+                    else return BadRequest(new { message = $"Invalid arrow format: {arrow}" });
                 }
 
-                if (dto.RoundId <= 0)
-                {
-                    return BadRequest(new { message = "RoundId must be provided and greater than 0" });
-                }
-
-                if (dto.EquipmentId <= 0)
-                {
-                    return BadRequest(new { message = "EquipmentId must be provided and greater than 0" });
-                }
-
-                if (dto.RawScore < 0)
-                {
-                    return BadRequest(new { message = "RawScore must be 0 or greater" });
-                }
-
-                // Verify that Archer exists
+                // 3. Kiểm tra tồn tại (giữ nguyên logic cũ)
                 var archer = await _context.Archers.FindAsync(dto.ArcherId);
-                if (archer == null)
-                {
-                    return BadRequest(new { message = $"Archer with ID {dto.ArcherId} not found" });
-                }
-
-                // Verify that Round exists
                 var round = await _context.Rounds.FindAsync(dto.RoundId);
-                if (round == null)
-                {
-                    return BadRequest(new { message = $"Round with ID {dto.RoundId} not found" });
-                }
-
-                // Verify that Equipment exists
                 var equipment = await _context.Equipment.FindAsync(dto.EquipmentId);
-                if (equipment == null)
-                {
-                    return BadRequest(new { message = $"Equipment with ID {dto.EquipmentId} not found" });
-                }
+                
+                if (archer == null || round == null || equipment == null)
+                    return BadRequest(new { message = "Entity not found" });
 
-                // Create the staging score with only the validated IDs
+                // 4. Tạo Staging Score với chi tiết mũi tên
                 var stagingScore = new Stagingscore
                 {
                     ArcherId = dto.ArcherId,
                     RoundId = dto.RoundId,
                     EquipmentId = dto.EquipmentId,
-                    RawScore = dto.RawScore,
+                    RawScore = calculatedTotal, // Tổng điểm tính bởi server
+                    ArrowValues = System.Text.Json.JsonSerializer.Serialize(dto.Arrows), // Lưu JSON
                     Status = "pending",
                     DateTime = DateTime.Now
                 };
@@ -164,30 +153,18 @@ namespace ArcheryWebsite.Controllers
                 _context.Stagingscores.Add(stagingScore);
                 await _context.SaveChangesAsync();
 
-                // Create response DTO to avoid circular references
-                var response = new StagingScoreResponseDto
-                {
-                    StagingId = stagingScore.StagingId,
-                    ArcherId = stagingScore.ArcherId,
-                    RoundId = stagingScore.RoundId,
-                    EquipmentId = stagingScore.EquipmentId,
-                    DateTime = stagingScore.DateTime,
-                    RawScore = stagingScore.RawScore,
-                    Status = stagingScore.Status ?? "pending",
-                    ArcherName = $"{archer.FirstName} {archer.LastName}",
-                    RoundName = round.RoundName,
-                    EquipmentType = equipment.DivisionType
-                };
-
-                return CreatedAtAction(
-                    nameof(GetStagingScore),
-                    new { id = stagingScore.StagingId },
-                    response
-                );
+                return Ok(new { message = "Score submitted", id = stagingScore.StagingId });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error creating staging score", error = ex.Message });
+                // [SỬA ĐOẠN NÀY] Lấy lỗi chi tiết từ bên trong (InnerException)
+                var detailedError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                
+                // Log ra console của server (terminal chạy dotnet run) để bạn dễ nhìn thấy
+                Console.WriteLine($"Error creating score: {detailedError}");
+
+                // Trả về lỗi chi tiết cho Frontend
+                return StatusCode(500, new { message = "Error creating score", error = detailedError });
             }
         }
 

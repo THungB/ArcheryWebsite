@@ -26,6 +26,7 @@ CREATE TABLE `range` (
   `range_id` int NOT NULL AUTO_INCREMENT,
   `distance_meters` int NOT NULL,
   `end_count` int NOT NULL,
+  `face_size_cm` int NOT NULL DEFAULT '122',
   PRIMARY KEY (`range_id`),
   CONSTRAINT `range_chk_1` CHECK ((`distance_meters` in (18,20,30,40,50,60,70,90))),
   CONSTRAINT `range_chk_2` CHECK ((`end_count` > 0))
@@ -38,7 +39,7 @@ CREATE TABLE `range` (
 
 LOCK TABLES `range` WRITE;
 /*!40000 ALTER TABLE `range` DISABLE KEYS */;
-INSERT INTO `range` VALUES (1,18,10),(2,20,6),(3,30,6),(4,40,6),(5,50,6),(6,60,6),(7,70,6),(8,90,6);
+INSERT INTO `range` VALUES (1,18,10,122),(2,20,6,122),(3,30,6,122),(4,40,6,122),(5,50,6,122),(6,60,6,122),(7,70,6,122),(8,90,6,122);
 /*!40000 ALTER TABLE `range` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -51,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 16:13:38
+-- Dump completed on 2025-11-20 18:23:10

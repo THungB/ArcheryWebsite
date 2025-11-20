@@ -30,6 +30,7 @@ CREATE TABLE `stagingscore` (
   `date_time` datetime NOT NULL,
   `raw_score` int NOT NULL,
   `status` enum('pending','approved','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `arrow_values` text COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`staging_id`),
   KEY `archer_id` (`archer_id`),
   KEY `round_id` (`round_id`),
@@ -37,7 +38,7 @@ CREATE TABLE `stagingscore` (
   CONSTRAINT `stagingscore_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
   CONSTRAINT `stagingscore_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
   CONSTRAINT `stagingscore_ibfk_3` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -46,7 +47,7 @@ CREATE TABLE `stagingscore` (
 
 LOCK TABLES `stagingscore` WRITE;
 /*!40000 ALTER TABLE `stagingscore` DISABLE KEYS */;
-INSERT INTO `stagingscore` VALUES (1,1,1,1,'2025-11-20 01:04:46',225,'approved'),(2,1,1,1,'2025-11-20 01:07:06',225,'pending'),(3,1,1,1,'2025-11-20 01:07:07',225,'pending'),(4,1,1,1,'2025-11-20 01:07:45',225,'pending'),(5,1,1,2,'2025-11-20 01:23:41',127,'pending');
+INSERT INTO `stagingscore` VALUES (1,1,1,1,'2025-11-20 01:04:46',225,'approved','[]'),(2,1,1,1,'2025-11-20 01:07:06',225,'pending','[]'),(3,1,1,1,'2025-11-20 01:07:07',225,'pending','[]'),(4,1,1,1,'2025-11-20 01:07:45',225,'pending','[]'),(5,1,1,2,'2025-11-20 01:23:41',127,'pending','[]'),(6,1,2,2,'2025-11-20 16:55:18',237,'approved','[]'),(7,1,5,2,'2025-11-20 18:21:43',60,'approved','[\"X\",\"X\",\"X\",\"X\",\"X\",\"X\"]');
 /*!40000 ALTER TABLE `stagingscore` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -59,4 +60,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 16:13:38
+-- Dump completed on 2025-11-20 18:23:10

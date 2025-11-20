@@ -9,5 +9,5 @@ public class CreateStagingScoreDto
     public int ArcherId { get; set; }
     public int RoundId { get; set; }
     public int EquipmentId { get; set; }
-    public int RawScore { get; set; }
+    public string[] Arrows { get; set; } = Array.Empty<string>();
 }

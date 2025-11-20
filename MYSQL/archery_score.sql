@@ -36,7 +36,7 @@ CREATE TABLE `score` (
   CONSTRAINT `score_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
   CONSTRAINT `score_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
   CONSTRAINT `score_ibfk_3` FOREIGN KEY (`comp_id`) REFERENCES `competition` (`comp_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -45,7 +45,7 @@ CREATE TABLE `score` (
 
 LOCK TABLES `score` WRITE;
 /*!40000 ALTER TABLE `score` DISABLE KEYS */;
-INSERT INTO `score` VALUES (1,1,1,NULL,'2025-11-20',225);
+INSERT INTO `score` VALUES (1,1,1,NULL,'2025-11-20',225),(2,1,2,NULL,'2025-11-20',237),(3,1,5,NULL,'2025-11-20',60);
 /*!40000 ALTER TABLE `score` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -58,4 +58,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 16:13:38
+-- Dump completed on 2025-11-20 18:23:11

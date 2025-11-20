@@ -96,6 +96,7 @@ export interface StagingScore {
     dateTime: string;
     rawScore: number;
     status: 'pending' | 'approved' | 'rejected';
+    arrowValues: string; // JSON string từ backend
     archer?: Archer;
     round?: Round;
     equipment?: Equipment;
@@ -188,16 +189,14 @@ export const stagingScoreAPI = {
         archerId: number,
         roundId: number,
         equipmentId: number,
-        rawScore: number,
+        arrows: string[],
         token: string
     ): Promise<StagingScore> => {
         const backendPayload = {
             ArcherId: archerId,
             RoundId: roundId,
             EquipmentId: equipmentId,
-            RawScore: rawScore,
-            DateTime: new Date().toISOString(),
-            Status: 'pending'
+            Arrows: arrows
         };
 
         return apiCall<StagingScore>('/StagingScore', {

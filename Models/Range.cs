@@ -8,7 +8,7 @@ public partial class Range
     public int RangeId { get; set; }
 
     public int DistanceMeters { get; set; }
-
+    public int FaceSizeCm { get; set; } = 122;
     public int EndCount { get; set; }
 
     public virtual ICollection<End> Ends { get; set; } = new List<End>();
