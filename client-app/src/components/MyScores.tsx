@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, CheckCircle, AlertCircle, Eye } from 'lucide-react';
+import { CheckCircle, AlertCircle, Eye, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -16,6 +16,7 @@ export function MyScores({ userId }: MyScoresProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log(`🔵 MyScores: Loading scores for userId: ${userId}`);
     loadScores();
   }, [userId]);
 
@@ -23,165 +24,42 @@ export function MyScores({ userId }: MyScoresProps) {
     setLoading(true);
     setError(null);
     
-    // Check if backend is configured
-    const token = localStorage.getItem('authToken');
-    
-    // If no token, use mock data (backend not configured yet)
-    if (!token) {
-      // Using mock data - backend not connected
-      setTimeout(() => {
-        setScores([
-          {
-            id: 1,
-            archerId: userId,
-            competitionId: 1,
-            competitionName: 'Spring Championship 2024',
-            roundType: '720 Round',
-            distance: '70m',
-            totalScore: 687,
-            endScores: [58, 59, 57, 58, 56, 59],
-            submittedDate: '2024-11-05',
-            status: 'approved',
-          },
-          {
-            id: 2,
-            archerId: userId,
-            competitionId: 2,
-            competitionName: 'Indoor Open',
-            roundType: 'WA 18m',
-            distance: '18m',
-            totalScore: 578,
-            endScores: [56, 58, 57, 59, 58, 60],
-            submittedDate: '2024-11-03',
-            status: 'pending',
-          },
-          {
-            id: 3,
-            archerId: userId,
-            competitionId: 3,
-            competitionName: 'Summer Series Round 3',
-            roundType: 'FITA Round',
-            distance: '50m',
-            totalScore: 645,
-            endScores: [56, 54, 55, 53, 56, 51],
-            submittedDate: '2024-11-01',
-            status: 'approved',
-          },
-          {
-            id: 4,
-            archerId: userId,
-            competitionId: 4,
-            competitionName: 'Club Championship',
-            roundType: '720 Round',
-            distance: '70m',
-            totalScore: 623,
-            endScores: [54, 52, 51, 53, 52, 51],
-            submittedDate: '2024-10-28',
-            status: 'rejected',
-            rejectionReason: 'Missing witness signature',
-          },
-        ]);
-        setLoading(false);
-      }, 500);
-      return;
-    }
-
-    // Try to connect to backend
     try {
+      const token = localStorage.getItem('authToken') || 'dummy-token';
+      console.log(`🔵 MyScores: Fetching scores with token:`, token);
+      
       const data = await archerAPI.getScores(userId, token);
-      setScores(data);
-    } catch (err) {
-      // Backend not available, use mock data
-      setScores([
-        {
-          id: 1,
-          archerId: userId,
-          competitionId: 1,
-          competitionName: 'Spring Championship 2024',
-          roundType: '720 Round',
-          distance: '70m',
-          totalScore: 687,
-          endScores: [58, 59, 57, 58, 56, 59],
-          submittedDate: '2024-11-05',
-          status: 'approved',
-        },
-        {
-          id: 2,
-          archerId: userId,
-          competitionId: 2,
-          competitionName: 'Indoor Open',
-          roundType: 'WA 18m',
-          distance: '18m',
-          totalScore: 578,
-          endScores: [56, 58, 57, 59, 58, 60],
-          submittedDate: '2024-11-03',
-          status: 'pending',
-        },
-        {
-          id: 3,
-          archerId: userId,
-          competitionId: 3,
-          competitionName: 'Summer Series Round 3',
-          roundType: 'FITA Round',
-          distance: '50m',
-          totalScore: 645,
-          endScores: [56, 54, 55, 53, 56, 51],
-          submittedDate: '2024-11-01',
-          status: 'approved',
-        },
-        {
-          id: 4,
-          archerId: userId,
-          competitionId: 4,
-          competitionName: 'Club Championship',
-          roundType: '720 Round',
-          distance: '70m',
-          totalScore: 623,
-          endScores: [54, 52, 51, 53, 52, 51],
-          submittedDate: '2024-10-28',
-          status: 'rejected',
-          rejectionReason: 'Missing witness signature',
-        },
-      ]);
-      setError('Backend not connected - using demo data');
+      console.log(`✅ MyScores: Received ${data?.length || 0} scores`);
+      
+      setScores(data || []);
+    } catch (err: any) {
+      console.error('❌ MyScores: Error loading scores:', err);
+      setError(err.message || 'Failed to load scores. Please check your connection.');
+      setScores([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return (
-          <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-            <CheckCircle className="w-3 h-3 mr-1" />
-            Approved
-          </Badge>
-        );
-      case 'pending':
-        return (
-          <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
-            <Clock className="w-3 h-3 mr-1" />
-            Pending
-          </Badge>
-        );
-      case 'rejected':
-        return (
-          <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-            <AlertCircle className="w-3 h-3 mr-1" />
-            Rejected
-          </Badge>
-        );
-      default:
-        return null;
-    }
+  const getStatusBadge = () => {
+    // Since we're only showing approved scores from the score table,
+    // we can mark them all as approved
+    return (
+      <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+        <CheckCircle className="w-3 h-3 mr-1" />
+        Approved
+      </Badge>
+    );
   };
 
   if (loading) {
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-8 text-gray-500">Loading scores...</div>
+          <div className="flex items-center justify-center py-8 gap-2 text-gray-500">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Loading your scores...</span>
+          </div>
         </CardContent>
       </Card>
     );
@@ -190,20 +68,37 @@ export function MyScores({ userId }: MyScoresProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>My Submitted Scores</CardTitle>
-        <CardDescription>View all your competition scores and their approval status</CardDescription>
+        <CardTitle>My Approved Scores</CardTitle>
+        <CardDescription>View all your officially approved competition scores</CardDescription>
       </CardHeader>
       <CardContent>
-        {scores.length === 0 ? (
+        {error ? (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+              <button
+                onClick={loadScores}
+                className="mt-2 text-sm text-red-600 dark:text-red-400 underline hover:no-underline"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        ) : scores.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            No scores submitted yet. Click "Submit Score" to add your first score.
+            <div className="w-12 h-12 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Eye className="w-6 h-6 text-gray-400" />
+            </div>
+            <p className="font-medium">No scores submitted yet</p>
+            <p className="text-sm mt-1">Click "Submit Score" to add your first competition score.</p>
+            <p className="text-xs text-gray-400 mt-3">Once submitted, scores will appear here after reviewer approval.</p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Date</TableHead>
-                <TableHead>Competition</TableHead>
                 <TableHead>Round</TableHead>
                 <TableHead>Distance</TableHead>
                 <TableHead>Score</TableHead>
@@ -213,15 +108,22 @@ export function MyScores({ userId }: MyScoresProps) {
             </TableHeader>
             <TableBody>
               {scores.map((score) => (
-                <TableRow key={score.id}>
-                  <TableCell>{score.submittedDate}</TableCell>
-                  <TableCell>{score.competitionName}</TableCell>
-                  <TableCell>{score.roundType}</TableCell>
-                  <TableCell>{score.distance}</TableCell>
-                  <TableCell>{score.totalScore}</TableCell>
-                  <TableCell>{getStatusBadge(score.status)}</TableCell>
+                <TableRow key={score.scoreId} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                  <TableCell className="text-gray-900 dark:text-gray-100">
+                    {new Date(score.dateShot).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </TableCell>
+                  <TableCell className="text-gray-900 dark:text-gray-100">Round {score.roundId}</TableCell>
+                  <TableCell className="text-gray-900 dark:text-gray-100">-</TableCell>
+                  <TableCell>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">{score.totalScore}</span>
+                  </TableCell>
+                  <TableCell>{getStatusBadge()}</TableCell>
                   <TableCell className="text-right">
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" className="hover:bg-gray-100 dark:hover:bg-slate-700">
                       <Eye className="w-4 h-4" />
                     </Button>
                   </TableCell>
@@ -229,6 +131,14 @@ export function MyScores({ userId }: MyScoresProps) {
               ))}
             </TableBody>
           </Table>
+        )}
+
+        {scores.length > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-800 dark:text-blue-200">
+              <strong>Total approved scores:</strong> {scores.length}
+            </p>
+          </div>
         )}
       </CardContent>
     </Card>

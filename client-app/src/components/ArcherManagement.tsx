@@ -17,57 +17,8 @@ export default function ArcherManagement() {
     bowType: '',
   });
 
-  // Mock data
-  const archers = [
-    {
-      id: 1,
-      name: 'John Smith',
-      archerNumber: 'A-2345',
-      email: 'john.smith@email.com',
-      phone: '+1234567890',
-      category: 'Recurve - Senior Men',
-      bowType: 'Recurve',
-      personalBest: 687,
-      competitions: 12,
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Emma Davis',
-      archerNumber: 'A-1289',
-      email: 'emma.davis@email.com',
-      phone: '+1234567891',
-      category: 'Compound - Senior Women',
-      bowType: 'Compound',
-      personalBest: 692,
-      competitions: 8,
-      status: 'active',
-    },
-    {
-      id: 3,
-      name: 'Michael Chen',
-      archerNumber: 'A-3456',
-      email: 'michael.chen@email.com',
-      phone: '+1234567892',
-      category: 'Recurve - Senior Men',
-      bowType: 'Recurve',
-      personalBest: 658,
-      competitions: 15,
-      status: 'active',
-    },
-    {
-      id: 4,
-      name: 'Sarah Johnson',
-      archerNumber: 'A-4567',
-      email: 'sarah.j@email.com',
-      phone: '+1234567893',
-      category: 'Recurve - Senior Women',
-      bowType: 'Recurve',
-      personalBest: 698,
-      competitions: 20,
-      status: 'active',
-    },
-  ];
+  // Archers will be loaded from backend - for now empty array
+  const archers: any[] = [];
 
   const filteredArchers = archers.filter(
     (archer) =>
@@ -96,15 +47,20 @@ export default function ArcherManagement() {
     }
 
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const token = "dummy-token"; // Replace with actual token retrieval logic
+      
+      await recorderAPI.createArcher({
+        name: newArcher.name,
+        email: newArcher.email,
+        phone: newArcher.phone,
+        archerNumber: newArcher.archerNumber,
+        category: newArcher.category,
+        bowType: newArcher.bowType
+      }, token);
 
-    console.log('Creating archer:', newArcher);
-
-    setIsLoading(false);
-    setSuccess('Archer created successfully!');
-    setTimeout(() => {
+      setSuccess('Archer created successfully!');
       setShowCreateDialog(false);
-      setSuccess('');
       setNewArcher({
         name: '',
         email: '',
@@ -113,7 +69,12 @@ export default function ArcherManagement() {
         category: '',
         bowType: '',
       });
-    }, 2000);
+      
+    } catch (err: any) {
+      setError(err.message || 'Failed to create archer');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -151,69 +112,76 @@ export default function ArcherManagement() {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Archer</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bow Type</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Personal Best</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Competitions</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredArchers.map((archer) => (
-                <tr key={archer.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="font-medium text-gray-900 dark:text-gray-100">{archer.name}</div>
-                      <div className="text-sm text-gray-500 dark:text-gray-400">{archer.archerNumber}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-                        <Mail className="w-3.5 h-3.5" />
-                        <span>{archer.email}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>{archer.phone}</span>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{archer.category}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2.5 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
-                      {archer.bowType}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">{archer.personalBest}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{archer.competitions}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                        <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                      </button>
-                      <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                        <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      </button>
-                    </div>
-                  </td>
+        {/* Empty State */}
+        {filteredArchers.length === 0 ? (
+          <div className="p-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">No archers found. Create your first archer using the button above.</p>
+          </div>
+        ) : (
+          /* Table */
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 dark:bg-slate-800 border-b border-gray-200 dark:border-gray-700">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Archer</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Bow Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Personal Best</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Competitions</th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredArchers.map((archer) => (
+                  <tr key={archer.id} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-gray-100">{archer.name}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{archer.archerNumber}</div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                          <Mail className="w-3.5 h-3.5" />
+                          <span>{archer.email}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>{archer.phone}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{archer.category}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="px-2.5 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full">
+                        {archer.bowType}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Award className="w-4 h-4 text-yellow-600 dark:text-yellow-500" />
+                        <span className="font-semibold text-gray-900 dark:text-gray-100">{archer.personalBest}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">{archer.competitions}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex gap-2 justify-end">
+                        <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                          <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                        </button>
+                        <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                          <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* Create Archer Dialog */}
@@ -401,7 +369,7 @@ export default function ArcherManagement() {
             </div>
           </div>
         </div>
-      )}
+      )}  
     </div>
   );
 }

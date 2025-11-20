@@ -13,53 +13,8 @@ export default function CompetitionManagement() {
     description: '',
   });
 
-  // Mock data
-  const competitions = [
-    {
-      id: 1,
-      name: 'Spring Championship 2024',
-      date: '2024-11-05',
-      location: 'National Archery Center',
-      roundType: '720 Round',
-      distance: '70m',
-      participants: 45,
-      maxParticipants: 50,
-      status: 'active',
-    },
-    {
-      id: 2,
-      name: 'Indoor Open',
-      date: '2024-11-03',
-      location: 'City Sports Complex',
-      roundType: 'WA 18m',
-      distance: '18m',
-      participants: 32,
-      maxParticipants: 40,
-      status: 'active',
-    },
-    {
-      id: 3,
-      name: 'Winter Championship 2024',
-      date: '2024-12-15',
-      location: 'National Archery Center',
-      roundType: '720 Round',
-      distance: '70m',
-      participants: 12,
-      maxParticipants: 60,
-      status: 'upcoming',
-    },
-    {
-      id: 4,
-      name: 'Summer Series Round 3',
-      date: '2024-09-15',
-      location: 'Regional Sports Ground',
-      roundType: 'FITA Round',
-      distance: '50m',
-      participants: 38,
-      maxParticipants: 40,
-      status: 'completed',
-    },
-  ];
+  // Competitions will be loaded from backend - for now empty array
+  const competitions: any[] = [];
 
   const handleCreate = () => {
     console.log('Creating competition:', newCompetition);
@@ -111,56 +66,62 @@ export default function CompetitionManagement() {
 
         {/* Competitions List */}
         <div className="p-6 space-y-4">
-          {competitions.map((comp) => (
-            <div key={comp.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition-shadow bg-white dark:bg-slate-800">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{comp.name}</h4>
-                    {getStatusBadge(comp.status)}
-                  </div>
-                  <div className="grid md:grid-cols-2 gap-3 text-sm">
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <Calendar className="w-4 h-4" />
-                      <span>{comp.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <Target className="w-4 h-4" />
-                      <span>{comp.roundType} - {comp.distance}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <Users className="w-4 h-4" />
-                      <span>{comp.participants} / {comp.maxParticipants} participants</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                      <MapPin className="w-4 h-4" />
-                      <span>{comp.location}</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                    <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  </button>
-                  <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
-                    <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                  </button>
-                </div>
-              </div>
-              {/* Progress Bar */}
-              <div className="relative">
-                <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
-                  <div
-                    className="bg-gradient-to-r from-purple-600 to-violet-600 h-2.5 rounded-full transition-all duration-500"
-                    style={{ width: `${(comp.participants / comp.maxParticipants) * 100}%` }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
-                  {Math.round((comp.participants / comp.maxParticipants) * 100)}% filled
-                </p>
-              </div>
+          {competitions.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-600 dark:text-gray-400">No competitions found. Create your first competition using the button above.</p>
             </div>
-          ))}
+          ) : (
+            competitions.map((comp) => (
+              <div key={comp.id} className="border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md transition-shadow bg-white dark:bg-slate-800">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <h4 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{comp.name}</h4>
+                      {getStatusBadge(comp.status)}
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Calendar className="w-4 h-4" />
+                        <span>{comp.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Target className="w-4 h-4" />
+                        <span>{comp.roundType} - {comp.distance}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <Users className="w-4 h-4" />
+                        <span>{comp.participants} / {comp.maxParticipants} participants</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+                        <MapPin className="w-4 h-4" />
+                        <span>{comp.location}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <Edit className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                    </button>
+                    <button className="p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                    </button>
+                  </div>
+                </div>
+                {/* Progress Bar */}
+                <div className="relative">
+                  <div className="bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      className="bg-gradient-to-r from-purple-600 to-violet-600 h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${(comp.participants / comp.maxParticipants) * 100}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+                    {Math.round((comp.participants / comp.maxParticipants) * 100)}% filled
+                  </p>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 

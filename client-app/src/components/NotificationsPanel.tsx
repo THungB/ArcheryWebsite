@@ -23,97 +23,8 @@ interface NotificationsPanelProps {
   userRole: 'archer' | 'recorder';
 }
 
-// Mock notifications data
-const mockArcherNotifications: Notification[] = [
-  {
-    id: 1,
-    type: 'record',
-    title: 'New Personal Best!',
-    message: 'Congratulations! You set a new personal best of 695/720 in the Indoor Championship Qualifier.',
-    timestamp: '2025-11-09 14:30:00',
-    read: false,
-    priority: 'high'
-  },
-  {
-    id: 2,
-    type: 'score_approved',
-    title: 'Score Approved',
-    message: 'Your score of 682/720 for Spring Championship 2025 has been approved by the recorder.',
-    timestamp: '2025-11-09 13:15:00',
-    read: false,
-    priority: 'medium'
-  },
-  {
-    id: 3,
-    type: 'competition',
-    title: 'New Competition Available',
-    message: 'Summer Regional Tournament 2025 is now open for registration. Registration closes on Nov 30, 2025.',
-    timestamp: '2025-11-09 10:00:00',
-    read: true,
-    priority: 'medium'
-  },
-  {
-    id: 4,
-    type: 'achievement',
-    title: 'Achievement Unlocked',
-    message: 'You\'ve completed 50 competition rounds! Keep up the great work.',
-    timestamp: '2025-11-08 16:45:00',
-    read: true,
-    priority: 'low'
-  },
-  {
-    id: 5,
-    type: 'system',
-    title: 'Profile Update Required',
-    message: 'Please update your contact information to ensure you receive important competition updates.',
-    timestamp: '2025-11-07 09:00:00',
-    read: true,
-    priority: 'medium'
-  }
-];
-
-const mockRecorderNotifications: Notification[] = [
-  {
-    id: 1,
-    type: 'score_approved',
-    title: 'Score Pending Approval',
-    message: '12 new scores are waiting for your approval in the Spring Championship 2025.',
-    timestamp: '2025-11-09 14:45:00',
-    read: false,
-    priority: 'high'
-  },
-  {
-    id: 2,
-    type: 'competition',
-    title: 'Competition Deadline Approaching',
-    message: 'Winter Indoor Championship registration closes in 3 days. 45 archers registered.',
-    timestamp: '2025-11-09 12:00:00',
-    read: false,
-    priority: 'medium'
-  },
-  {
-    id: 3,
-    type: 'system',
-    title: 'New Archer Registration',
-    message: 'New archer "Michael Chen" (ARC156) has registered and requires profile verification.',
-    timestamp: '2025-11-09 11:30:00',
-    read: true,
-    priority: 'medium'
-  },
-  {
-    id: 4,
-    type: 'achievement',
-    title: 'Monthly Report Ready',
-    message: 'October 2025 competition statistics report is now available for download.',
-    timestamp: '2025-11-08 08:00:00',
-    read: true,
-    priority: 'low'
-  }
-];
-
 export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
-  const initialNotifications = userRole === 'archer' ? mockArcherNotifications : mockRecorderNotifications;
-  const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationSettings, setNotificationSettings] = useState({
     records: true,
     scoreApprovals: true,
@@ -418,8 +329,7 @@ export function NotificationsPanel({ userRole }: NotificationsPanelProps) {
 
               <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  💡 <strong>Note:</strong> These settings are demonstration only. 
-                  In production, preferences will be saved to your account.
+                  💡 <strong>Note:</strong> Notifications will be populated from the backend API.
                 </p>
               </div>
             </div>

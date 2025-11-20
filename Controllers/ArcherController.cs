@@ -191,7 +191,7 @@ namespace ArcheryWebsite.Controllers
         // GET: api/Archer/5/scores
         // Get all scores for a specific archer
         [HttpGet("{id}/scores")]
-        public async Task<ActionResult<IEnumerable<Score>>> GetArcherScores(int id)
+        public async Task<ActionResult<IEnumerable<ScoreResponseDto>>> GetArcherScores(int id)
         {
             try
             {
@@ -208,7 +208,20 @@ namespace ArcheryWebsite.Controllers
                     .OrderByDescending(s => s.DateShot)
                     .ToListAsync();
 
-                return Ok(scores);
+                // Map to DTO to avoid circular references
+                var responseDtos = scores.Select(s => new ScoreResponseDto
+                {
+                    ScoreId = s.ScoreId,
+                    ArcherId = s.ArcherId,
+                    RoundId = s.RoundId,
+                    CompId = s.CompId,
+                    DateShot = s.DateShot.ToString("yyyy-MM-dd"),
+                    TotalScore = s.TotalScore,
+                    RoundName = s.Round?.RoundName,
+                    CompetitionName = s.Comp?.CompName
+                }).ToList();
+
+                return Ok(responseDtos);
             }
             catch (Exception ex)
             {

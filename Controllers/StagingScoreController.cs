@@ -42,7 +42,7 @@ namespace ArcheryWebsite.Controllers
 
         // GET: api/StagingScore/pending
         [HttpGet("pending")]
-        public async Task<ActionResult<IEnumerable<Stagingscore>>> GetPendingScores()
+        public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetPendingScores()
         {
             try
             {
@@ -54,7 +54,22 @@ namespace ArcheryWebsite.Controllers
                     .OrderBy(ss => ss.DateTime)
                     .ToListAsync();
 
-                return Ok(pendingScores);
+                // Map to DTO to avoid circular references
+                var responseDtos = pendingScores.Select(ss => new StagingScoreResponseDto
+                {
+                    StagingId = ss.StagingId,
+                    ArcherId = ss.ArcherId,
+                    RoundId = ss.RoundId,
+                    EquipmentId = ss.EquipmentId,
+                    DateTime = ss.DateTime,
+                    RawScore = ss.RawScore,
+                    Status = ss.Status ?? "pending",
+                    ArcherName = $"{ss.Archer.FirstName} {ss.Archer.LastName}",
+                    RoundName = ss.Round.RoundName,
+                    EquipmentType = ss.Equipment.DivisionType
+                }).ToList();
+
+                return Ok(responseDtos);
             }
             catch (Exception ex)
             {
@@ -89,21 +104,85 @@ namespace ArcheryWebsite.Controllers
 
         // POST: api/StagingScore
         [HttpPost]
-        public async Task<ActionResult<Stagingscore>> CreateStagingScore(Stagingscore stagingScore)
+        public async Task<ActionResult<StagingScoreResponseDto>> CreateStagingScore(CreateStagingScoreDto dto)
         {
             try
             {
-                // Set default status to pending
-                stagingScore.Status = "pending";
-                stagingScore.DateTime = DateTime.Now;
+                // Validate that required IDs are provided
+                if (dto.ArcherId <= 0)
+                {
+                    return BadRequest(new { message = "ArcherId must be provided and greater than 0" });
+                }
+
+                if (dto.RoundId <= 0)
+                {
+                    return BadRequest(new { message = "RoundId must be provided and greater than 0" });
+                }
+
+                if (dto.EquipmentId <= 0)
+                {
+                    return BadRequest(new { message = "EquipmentId must be provided and greater than 0" });
+                }
+
+                if (dto.RawScore < 0)
+                {
+                    return BadRequest(new { message = "RawScore must be 0 or greater" });
+                }
+
+                // Verify that Archer exists
+                var archer = await _context.Archers.FindAsync(dto.ArcherId);
+                if (archer == null)
+                {
+                    return BadRequest(new { message = $"Archer with ID {dto.ArcherId} not found" });
+                }
+
+                // Verify that Round exists
+                var round = await _context.Rounds.FindAsync(dto.RoundId);
+                if (round == null)
+                {
+                    return BadRequest(new { message = $"Round with ID {dto.RoundId} not found" });
+                }
+
+                // Verify that Equipment exists
+                var equipment = await _context.Equipment.FindAsync(dto.EquipmentId);
+                if (equipment == null)
+                {
+                    return BadRequest(new { message = $"Equipment with ID {dto.EquipmentId} not found" });
+                }
+
+                // Create the staging score with only the validated IDs
+                var stagingScore = new Stagingscore
+                {
+                    ArcherId = dto.ArcherId,
+                    RoundId = dto.RoundId,
+                    EquipmentId = dto.EquipmentId,
+                    RawScore = dto.RawScore,
+                    Status = "pending",
+                    DateTime = DateTime.Now
+                };
 
                 _context.Stagingscores.Add(stagingScore);
                 await _context.SaveChangesAsync();
 
+                // Create response DTO to avoid circular references
+                var response = new StagingScoreResponseDto
+                {
+                    StagingId = stagingScore.StagingId,
+                    ArcherId = stagingScore.ArcherId,
+                    RoundId = stagingScore.RoundId,
+                    EquipmentId = stagingScore.EquipmentId,
+                    DateTime = stagingScore.DateTime,
+                    RawScore = stagingScore.RawScore,
+                    Status = stagingScore.Status ?? "pending",
+                    ArcherName = $"{archer.FirstName} {archer.LastName}",
+                    RoundName = round.RoundName,
+                    EquipmentType = equipment.DivisionType
+                };
+
                 return CreatedAtAction(
                     nameof(GetStagingScore),
                     new { id = stagingScore.StagingId },
-                    stagingScore
+                    response
                 );
             }
             catch (Exception ex)

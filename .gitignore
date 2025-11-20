@@ -10,6 +10,11 @@
 *.userosscache
 *.sln.docstates
 
+# Development settings files (contains database credentials)
+appsettings.Development.json
+appsettings.*.json
+*.local.*
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

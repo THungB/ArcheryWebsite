@@ -1,8 +1,5 @@
 // API Configuration for ASP.NET Backend Integration
-
-// Replace this with your ASP.NET API URL
-const API_BASE_URL = 'https://localhost:7001/api'; // ASP.NET API URL
-// For production: const API_BASE_URL = 'https://yourdomain.com/api';
+const API_BASE_URL = 'https://localhost:7001/api';
 
 // Helper function to make API calls
 async function apiCall<T>(
@@ -23,27 +20,30 @@ async function apiCall<T>(
         },
     };
 
+    console.log(`🔵 API Call: ${options.method || 'GET'} ${url}`);
+
     try {
         const response = await fetch(url, config);
 
         if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || `API Error: ${response.status}`);
+            const errorText = await response.text();
+            console.error(`❌ API Error ${response.status}:`, errorText); 
+            throw new Error(errorText || `API Error: ${response.status}`);
         }
 
-        return await response.json();
+        // Handle cases where API returns 204 No Content or empty body
+        const text = await response.text();
+        const result = text ? JSON.parse(text) : {} as T;
+        console.log(`✅ API Response:`, result);
+        return result;
+
     } catch (error) {
-        // Only log errors in development, silently fail otherwise
-        if (process.env.NODE_ENV === 'development') {
-            // Backend not running - this is expected during development
-        }
+        console.error("❌ API Call Failed:", error);
         throw error;
     }
 }
 
-// ============================================
 // AUTHENTICATION API
-// ============================================
 
 export interface LoginRequest {
     username: string;
@@ -60,197 +60,186 @@ export interface LoginResponse {
 }
 
 export const authAPI = {
-    // POST /api/auth/login
+    // Mock Login (Simulated)
     login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-        return apiCall<LoginResponse>('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify(credentials),
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                resolve({
+                    success: true,
+                    userId: "1",
+                    token: "dummy-jwt-token",
+                    role: credentials.role,
+                    username: credentials.username
+                });
+            }, 500);
         });
     },
 
-    // POST /api/auth/logout
-    logout: async (token: string): Promise<void> => {
-        return apiCall<void>('/auth/logout', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-        });
+    // Placeholder Logout
+    // Note: '_token' has an underscore to silence "unused variable" warnings
+    logout: async (_token: string): Promise<void> => {
+        return Promise.resolve();
     },
 };
 
-// ============================================
 // ARCHER API
-// ============================================
 
 export interface Score {
-    id: number;
-    archerId: string;
-    competitionId: number;
-    competitionName: string;
-    roundType: string;
-    distance: string;
+    scoreId: number;
+    archerId: number;
+    roundId: number;
+    compId?: number;
+    dateShot: string;
     totalScore: number;
-    endScores: number[];
-    submittedDate: string;
+}
+
+export interface Archer {
+    archerId: number;
+    firstName: string;
+    lastName: string;
+    gender: string;
+    dateOfBirth: string;
+    email: string;
+}
+
+export interface StagingScore {
+    stagingId: number;
+    archerId: number;
+    roundId: number;
+    equipmentId: number;
+    dateTime: string;
+    rawScore: number;
     status: 'pending' | 'approved' | 'rejected';
-    notes?: string;
-    rejectionReason?: string;
-}
-
-export interface PersonalBest {
-    roundType: string;
-    distance: string;
-    bestScore: number;
-    date: string;
-    competitionName: string;
-}
-
-export interface Competition {
-    id: number;
-    name: string;
-    date: string;
-    location: string;
-    roundType: string;
-    distance: string;
-    maxParticipants: number;
-    currentParticipants: number;
-    status: 'upcoming' | 'active' | 'completed';
-    description?: string;
+    archer?: Archer;
+    round?: any;
+    equipment?: any;
 }
 
 export const archerAPI = {
-    // GET /api/archers/{archerId}/scores
+    // GET /api/Archer/{id}/scores
     getScores: async (archerId: string, token: string): Promise<Score[]> => {
-        return apiCall<Score[]>(`/archers/${archerId}/scores`, {
+        return apiCall<Score[]>(`/Archer/${archerId}/scores`, {
             headers: { Authorization: `Bearer ${token}` },
         });
     },
 
-    // POST /api/archers/{archerId}/scores
+    // POST /api/Score (Submit Score) - DEPRECATED, use stagingScoreAPI instead
     submitScore: async (
         archerId: string,
-        scoreData: {
-            competitionId: number;
-            roundType: string;
-            distance: string;
-            endScores: number[];
-            notes?: string;
-        },
+        scoreData: any,
         token: string
-    ): Promise<Score> => {
-        return apiCall<Score>(`/archers/${archerId}/scores`, {
+    ): Promise<any> => {
+
+        const backendPayload = {
+            ArcherId: parseInt(archerId) || 1, // Fallback to ID 1 if parsing fails
+            RoundId: parseInt(scoreData.roundId),
+            CompId: parseInt(scoreData.competitionId),
+            TotalScore: scoreData.totalScore,
+            DateShot: scoreData.dateShot, // YYYY-MM-DD string is compatible with DateOnly
+        };
+
+        return apiCall<any>('/Score', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify(scoreData),
+            body: JSON.stringify(backendPayload),
         });
     },
+};
 
-    // GET /api/archers/{archerId}/personal-bests
-    getPersonalBests: async (archerId: string, token: string): Promise<PersonalBest[]> => {
-        return apiCall<PersonalBest[]>(`/archers/${archerId}/personal-bests`, {
+// STAGING SCORE API
+
+export const stagingScoreAPI = {
+    // GET /api/StagingScore/pending - Get all pending scores waiting for approval
+    getPendingScores: async (token: string): Promise<StagingScore[]> => {
+        return apiCall<StagingScore[]>('/StagingScore/pending', {
             headers: { Authorization: `Bearer ${token}` },
         });
     },
 
-    // GET /api/archers/{archerId}/statistics
-    getStatistics: async (
-        archerId: string,
+    // GET /api/StagingScore - Get all staging scores
+    getAllStagingScores: async (token: string): Promise<StagingScore[]> => {
+        return apiCall<StagingScore[]>('/StagingScore', {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+    },
+
+    // GET /api/StagingScore/{id} - Get single staging score
+    getStagingScore: async (stagingId: number, token: string): Promise<StagingScore> => {
+        return apiCall<StagingScore>(`/StagingScore/${stagingId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+    },
+
+    // POST /api/StagingScore - Submit score for approval
+    submitScore: async (
+        archerId: number,
+        roundId: number,
+        equipmentId: number,
+        rawScore: number,
         token: string
-    ): Promise<{
-        totalScores: number;
-        personalBest: number;
-        competitions: number;
-        averageScore: number;
-    }> => {
-        return apiCall(`/archers/${archerId}/statistics`, {
+    ): Promise<StagingScore> => {
+        const backendPayload = {
+            ArcherId: archerId,
+            RoundId: roundId,
+            EquipmentId: equipmentId,
+            RawScore: rawScore,
+            DateTime: new Date().toISOString(),
+            Status: 'pending'
+        };
+
+        return apiCall<StagingScore>('/StagingScore', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify(backendPayload),
+        });
+    },
+
+    // PUT /api/StagingScore/{id}/approve - Approve score and move to official table
+    approveScore: async (
+        stagingId: number,
+        competitionId?: number,
+        token?: string
+    ): Promise<any> => {
+        const queryParams = competitionId ? `?competitionId=${competitionId}` : '';
+        return apiCall<any>(`/StagingScore/${stagingId}/approve${queryParams}`, {
+            method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
         });
     },
 
-    // GET /api/competitions
-    getCompetitions: async (token: string): Promise<Competition[]> => {
-        return apiCall<Competition[]>('/competitions', {
+    // PUT /api/StagingScore/{id}/reject - Reject score
+    rejectScore: async (
+        stagingId: number,
+        reason: string,
+        token?: string
+    ): Promise<any> => {
+        return apiCall<any>(`/StagingScore/${stagingId}/reject`, {
+            method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
+            body: JSON.stringify(reason),
         });
     },
 
-    // GET /api/competitions/{competitionId}/leaderboard
-    getLeaderboard: async (
-        competitionId: number,
-        token: string
-    ): Promise<{
-        rank: number;
-        archerId: string;
-        archerName: string;
-        score: number;
-        arrows: number;
-    }[]> => {
-        return apiCall(`/competitions/${competitionId}/leaderboard`, {
+    // DELETE /api/StagingScore/{id} - Delete staging score
+    deleteStagingScore: async (stagingId: number, token: string): Promise<void> => {
+        return apiCall<void>(`/StagingScore/${stagingId}`, {
+            method: 'DELETE',
             headers: { Authorization: `Bearer ${token}` },
         });
     },
 };
 
-// ============================================
 // RECORDER API
-// ============================================
-
-export interface Archer {
-    id: number;
-    archerId: string;
-    name: string;
-    email: string;
-    phone: string;
-    category: string;
-    bowType: string;
-    personalBest: number;
-    totalCompetitions: number;
-    status: 'active' | 'inactive';
-}
-
-export interface PendingScore extends Score {
-    archerName: string;
-    archerNumber: string;
-    flagged: boolean;
-    flagReason?: string;
-}
 
 export const recorderAPI = {
-    // GET /api/recorder/pending-scores
-    getPendingScores: async (token: string): Promise<PendingScore[]> => {
-        return apiCall<PendingScore[]>('/recorder/pending-scores', {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    },
-
-    // POST /api/recorder/scores/{scoreId}/approve
-    approveScore: async (scoreId: number, token: string): Promise<void> => {
-        return apiCall<void>(`/recorder/scores/${scoreId}/approve`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    },
-
-    // POST /api/recorder/scores/{scoreId}/reject
-    rejectScore: async (
-        scoreId: number,
-        reason: string,
-        token: string
-    ): Promise<void> => {
-        return apiCall<void>(`/recorder/scores/${scoreId}/reject`, {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ reason }),
-        });
-    },
-
-    // GET /api/recorder/archers
+    // GET /api/Archer
     getArchers: async (token: string): Promise<Archer[]> => {
-        return apiCall<Archer[]>('/Archer', { 
+        return apiCall<Archer[]>('/Archer', {
             headers: { Authorization: `Bearer ${token}` },
         });
     },
 
-    // POST /api/recorder/archers
+    // POST /api/Archer
     createArcher: async (
         archerData: {
             name: string;
@@ -262,92 +251,44 @@ export const recorderAPI = {
         },
         token: string
     ): Promise<Archer> => {
+
+        // Split full name into First/Last for backend
+        const nameParts = archerData.name.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Unknown';
+
+        const backendPayload = {
+            FirstName: firstName,
+            LastName: lastName,
+            Email: archerData.email,
+            Gender: "Male",
+            DateOfBirth: "2000-01-01"
+        };
+
         return apiCall<Archer>('/Archer', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify(archerData),
+            body: JSON.stringify(backendPayload),
         });
     },
 
-    // PUT /api/recorder/archers/{archerId}
+    // PUT /api/Archer/{id}
     updateArcher: async (
         archerId: number,
         archerData: Partial<Archer>,
         token: string
     ): Promise<Archer> => {
-        return apiCall<Archer>(`/recorder/archers/${archerId}`, {
+        return apiCall<Archer>(`/Archer/${archerId}`, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
             body: JSON.stringify(archerData),
         });
     },
 
-    // DELETE /api/recorder/archers/{archerId}
+    // DELETE /api/Archer/{id}
     deleteArcher: async (archerId: number, token: string): Promise<void> => {
-        return apiCall<void>(`/recorder/archers/${archerId}`, {
+        return apiCall<void>(`/Archer/${archerId}`, {
             method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    },
-
-    // GET /api/recorder/competitions
-    getCompetitions: async (token: string): Promise<Competition[]> => {
-        return apiCall<Competition[]>('/recorder/competitions', {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    },
-
-    // POST /api/recorder/competitions
-    createCompetition: async (
-        competitionData: {
-            name: string;
-            date: string;
-            location: string;
-            roundType: string;
-            distance: string;
-            maxParticipants: number;
-            description?: string;
-        },
-        token: string
-    ): Promise<Competition> => {
-        return apiCall<Competition>('/recorder/competitions', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify(competitionData),
-        });
-    },
-
-    // PUT /api/recorder/competitions/{competitionId}
-    updateCompetition: async (
-        competitionId: number,
-        competitionData: Partial<Competition>,
-        token: string
-    ): Promise<Competition> => {
-        return apiCall<Competition>(`/recorder/competitions/${competitionId}`, {
-            method: 'PUT',
-            headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify(competitionData),
-        });
-    },
-
-    // DELETE /api/recorder/competitions/{competitionId}
-    deleteCompetition: async (competitionId: number, token: string): Promise<void> => {
-        return apiCall<void>(`/recorder/competitions/${competitionId}`, {
-            method: 'DELETE',
-            headers: { Authorization: `Bearer ${token}` },
-        });
-    },
-
-    // GET /api/recorder/statistics
-    getStatistics: async (
-        token: string
-    ): Promise<{
-        totalArchers: number;
-        activeCompetitions: number;
-        pendingApprovals: number;
-        approvedToday: number;
-    }> => {
-        return apiCall('/recorder/statistics', {
             headers: { Authorization: `Bearer ${token}` },
         });
     },

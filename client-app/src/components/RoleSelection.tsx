@@ -56,8 +56,8 @@ export function RoleSelection({ onRoleSelect }: RoleSelectionProps) {
     setIsLoading(false);
 
     if (user) {
-      // Successful login
-      onRoleSelect(selectedRole, user.name, username);
+      // Successful login - pass the numeric user ID, not the name
+      onRoleSelect(selectedRole, user.id.toString(), username);
     } else {
       setError('Invalid username or password');
     }
