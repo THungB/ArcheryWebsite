@@ -16,7 +16,7 @@ namespace ArcheryWebsite.Controllers
         }
 
         // GET: api/Round
-        [HttpGet]
+            [HttpGet]
         public async Task<ActionResult<IEnumerable<Round>>> GetRounds([FromQuery] bool includeHistory = false)
         {
             try
@@ -41,20 +41,35 @@ namespace ArcheryWebsite.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<Round>> GetRound(int id)
         {
+            var round = await _context.Rounds.FindAsync(id);
+            if (round == null) return NotFound(new { message = $"Round with ID {id} not found" });
+            return Ok(round);
+        }
+
+        // GET: api/Round/5/equivalents
+        [HttpGet("{id}/equivalents")]
+        public async Task<ActionResult<IEnumerable<Round>>> GetEquivalentRounds(int id)
+        {
             try
             {
-                var round = await _context.Rounds.FindAsync(id);
+                var exists = await _context.Rounds.AnyAsync(r => r.RoundId == id);
+                if (!exists) return NotFound(new { message = $"Round with ID {id} not found" });
 
-                if (round == null)
-                {
-                    return NotFound(new { message = $"Round with ID {id} not found" });
-                }
+                var equivalentIds = await _context.RoundEquivalences
+                    .Where(re => re.RoundId == id || re.EquivalentRoundId == id)
+                    .Select(re => re.RoundId == id ? re.EquivalentRoundId : re.RoundId)
+                    .Distinct()
+                    .ToListAsync();
+                
+                var equivalentRounds = await _context.Rounds
+                    .Where(r => equivalentIds.Contains(r.RoundId))
+                    .ToListAsync();
 
-                return Ok(round);
+                return Ok(equivalentRounds);
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error retrieving round", error = ex.Message });
+                return StatusCode(500, new { message = "Error retrieving equivalent rounds", error = ex.Message });
             }
         }
 
@@ -62,65 +77,42 @@ namespace ArcheryWebsite.Controllers
         [HttpGet("{id}/ranges")]
         public async Task<ActionResult> GetRoundRanges(int id)
         {
-            try
-            {
-                var round = await _context.Rounds.FindAsync(id);
-                if (round == null)
-                {
-                    return NotFound(new { message = $"Round with ID {id} not found" });
-                }
+            var round = await _context.Rounds.FindAsync(id);
+            if (round == null) return NotFound();
 
-                var roundRanges = await _context.Roundranges
-                    .Where(rr => rr.RoundId == id)
-                    .Include(rr => rr.Range)
-                    .OrderBy(rr => rr.SequenceNumber)
-                    .Select(rr => new
-                    {
-                        sequenceNumber = rr.SequenceNumber,
-                        rangeId = rr.RangeId,
-                        distanceMeters = rr.Range.DistanceMeters,
-                        endCount = rr.Range.EndCount
-                    })
-                    .ToListAsync();
-
-                return Ok(new
+            var roundRanges = await _context.Roundranges
+                .Where(rr => rr.RoundId == id)
+                .Include(rr => rr.Range)
+                .OrderBy(rr => rr.SequenceNumber)
+                .Select(rr => new
                 {
-                    roundId = round.RoundId,
-                    roundName = round.RoundName,
-                    description = round.Description,
-                    ranges = roundRanges
-                });
-            }
-            catch (Exception ex)
+                    sequenceNumber = rr.SequenceNumber,
+                    rangeId = rr.RangeId,
+                    distanceMeters = rr.Range.DistanceMeters,
+                    endCount = rr.Range.EndCount
+                })
+                .ToListAsync();
+
+            return Ok(new
             {
-                return StatusCode(500, new { message = "Error retrieving round ranges", error = ex.Message });
-            }
+                roundId = round.RoundId,
+                roundName = round.RoundName,
+                description = round.Description,
+                ranges = roundRanges
+            });
         }
 
         // POST: api/Round
         [HttpPost]
         public async Task<ActionResult<Round>> CreateRound(Round round)
         {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(round.RoundName))
-                {
-                    return BadRequest(new { message = "Round name is required" });
-                }
+            if (string.IsNullOrWhiteSpace(round.RoundName)) return BadRequest(new { message = "Round name is required" });
+            
+            if (round.ValidFrom == default) round.ValidFrom = DateOnly.FromDateTime(DateTime.Now);
 
-                _context.Rounds.Add(round);
-                await _context.SaveChangesAsync();
-
-                return CreatedAtAction(
-                    nameof(GetRound),
-                    new { id = round.RoundId },
-                    round
-                );
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error creating round", error = ex.Message });
-            }
+            _context.Rounds.Add(round);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetRound), new { id = round.RoundId }, round);
         }
 
         // PUT: api/Round/5

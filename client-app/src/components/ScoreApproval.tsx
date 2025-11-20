@@ -1,3 +1,4 @@
+// src/components/ScoreApproval.tsx
 import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Eye, AlertTriangle, Loader2, User, Target, Calendar, Award } from 'lucide-react';
 import { stagingScoreAPI, StagingScore } from '../services/api';
@@ -21,7 +22,7 @@ export function ScoreApproval() {
             const token = localStorage.getItem('authToken') || 'dummy-token';
             const scores = await stagingScoreAPI.getPendingScores(token);
             setPendingScores(scores);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error loading pending scores:', err);
             setError('Failed to load pending scores. Please try again.');
         } finally {
@@ -39,7 +40,7 @@ export function ScoreApproval() {
             setPendingScores(pendingScores.filter(s => s.stagingId !== selectedScore.stagingId));
             setSelectedScore(null);
             setRejectionReason('');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error approving score:', err);
             setError('Failed to approve score. Please try again.');
         } finally {
@@ -57,7 +58,7 @@ export function ScoreApproval() {
             setPendingScores(pendingScores.filter(s => s.stagingId !== selectedScore.stagingId));
             setSelectedScore(null);
             setRejectionReason('');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error rejecting score:', err);
             setError('Failed to reject score. Please try again.');
         } finally {
