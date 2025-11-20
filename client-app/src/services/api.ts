@@ -242,27 +242,25 @@ export const recorderAPI = {
     // POST /api/Archer
     createArcher: async (
         archerData: {
-            name: string;
+            firstName: string;
+            lastName: string;
             email: string;
-            phone: string;
-            archerNumber: string;
-            category: string;
-            bowType: string;
+            gender: string;
+            dateOfBirth: string;
+            phone?: string;
+            defaultEquipmentId?: number;
         },
         token: string
     ): Promise<Archer> => {
 
-        // Split full name into First/Last for backend
-        const nameParts = archerData.name.trim().split(' ');
-        const firstName = nameParts[0];
-        const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : 'Unknown';
-
         const backendPayload = {
-            FirstName: firstName,
-            LastName: lastName,
+            FirstName: archerData.firstName,
+            LastName: archerData.lastName,
             Email: archerData.email,
-            Gender: "Male",
-            DateOfBirth: "2000-01-01"
+            Gender: archerData.gender,
+            DateOfBirth: archerData.dateOfBirth, // Send as DD/MM/YYYY or YYYY-MM-DD
+            Phone: archerData.phone || null,
+            DefaultEquipmentId: archerData.defaultEquipmentId || 1
         };
 
         return apiCall<Archer>('/Archer', {

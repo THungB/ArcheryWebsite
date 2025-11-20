@@ -56,37 +56,73 @@ namespace ArcheryWebsite.Controllers
         // POST: api/Archer
         // Create new archer
         [HttpPost]
-        public async Task<ActionResult<Archer>> CreateArcher(Archer archer)
+        public async Task<ActionResult<Archer>> CreateArcher(CreateArcherDto dto)
         {
             try
             {
-                // Validation Name
-                if (string.IsNullOrWhiteSpace(archer.FirstName) || 
-                    string.IsNullOrWhiteSpace(archer.LastName))
+                // Validation: Check required fields
+                if (string.IsNullOrWhiteSpace(dto.FirstName) || string.IsNullOrWhiteSpace(dto.LastName))
                 {
                     return BadRequest(new { message = "First name and last name are required" });
                 }
 
-                // Validate Gender matches the Database Enum
+                // Validate Gender
                 var validGenders = new[] { "Male", "Female", "Other" };
-                if (!validGenders.Contains(archer.Gender))
+                if (string.IsNullOrWhiteSpace(dto.Gender) || !validGenders.Contains(dto.Gender))
                 {
-                    return BadRequest(new { message = "Gender must be 'Male', 'Female', or 'Other'." });
+                    return BadRequest(new { message = "Gender must be 'Male', 'Female', or 'Other'" });
                 }
 
-                // Validation Email 
-                if (!string.IsNullOrWhiteSpace(archer.Email) && 
-                    !archer.Email.Contains("@"))
+                // Validate Email format
+                if (string.IsNullOrWhiteSpace(dto.Email) || !dto.Email.Contains("@"))
                 {
-                    return BadRequest(new { message = "Invalid email format" });
+                    return BadRequest(new { message = "Valid email address is required" });
                 }
+
+                // Parse Date of Birth (handle DD/MM/YYYY and YYYY-MM-DD formats)
+                DateOnly dob;
+                if (DateOnly.TryParseExact(dto.DateOfBirth, "dd/MM/yyyy", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dobDDMMYY))
+                {
+                    dob = dobDDMMYY;
+                }
+                else if (DateOnly.TryParseExact(dto.DateOfBirth, "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var dobISO))
+                {
+                    dob = dobISO;
+                }
+                else
+                {
+                    return BadRequest(new { message = "Date of Birth must be in DD/MM/YYYY or YYYY-MM-DD format" });
+                }
+
+                // Verify Default Equipment exists (if provided)
+                if (dto.DefaultEquipmentId.HasValue && dto.DefaultEquipmentId > 0)
+                {
+                    var equipment = await _context.Equipment.FindAsync(dto.DefaultEquipmentId);
+                    if (equipment == null)
+                    {
+                        return BadRequest(new { message = $"Equipment with ID {dto.DefaultEquipmentId} not found" });
+                    }
+                }
+
+                // Create new archer
+                var archer = new Archer
+                {
+                    FirstName = dto.FirstName.Trim(),
+                    LastName = dto.LastName.Trim(),
+                    Gender = dto.Gender,
+                    DateOfBirth = dob,
+                    Email = dto.Email.Trim(),
+                    Phone = string.IsNullOrWhiteSpace(dto.Phone) ? null : dto.Phone.Trim(),
+                    DefaultEquipmentId = dto.DefaultEquipmentId ?? 1,
+                    UserId = null // User ID is optional - archer may not have account yet
+                };
 
                 _context.Archers.Add(archer);
                 await _context.SaveChangesAsync();
 
                 return CreatedAtAction(
-                    nameof(GetArcher), 
-                    new { id = archer.ArcherId }, 
+                    nameof(GetArcher),
+                    new { id = archer.ArcherId },
                     archer
                 );
             }

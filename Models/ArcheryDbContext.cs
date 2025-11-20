@@ -49,19 +49,26 @@ public partial class ArcheryDbContext : DbContext
             entity.ToTable("archer");
 
             entity.Property(e => e.ArcherId).HasColumnName("archer_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.FirstName)
+                .HasMaxLength(100)
+                .HasColumnName("first_name");
+            entity.Property(e => e.LastName)
+                .HasMaxLength(100)
+                .HasColumnName("last_name");
+            entity.Property(e => e.Gender)
+                .HasColumnType("enum('Male','Female','Other')")
+                .HasColumnName("gender");
             entity.Property(e => e.DateOfBirth).HasColumnName("date_of_birth");
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
                 .HasColumnName("email");
-            entity.Property(e => e.FirstName)
-                .HasMaxLength(100)
-                .HasColumnName("first_name");
-            entity.Property(e => e.Gender)
-                .HasColumnType("enum('Male','Female','Other')")
-                .HasColumnName("gender");
-            entity.Property(e => e.LastName)
-                .HasMaxLength(100)
-                .HasColumnName("last_name");
+            entity.Property(e => e.Phone)
+                .HasMaxLength(20)
+                .HasColumnName("phone");
+            entity.Property(e => e.DefaultEquipmentId)
+                .HasDefaultValue(1)
+                .HasColumnName("default_equipment_id");
         });
 
         modelBuilder.Entity<Arrow>(entity =>
