@@ -16,38 +16,31 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `stagingscore`
+-- Table structure for table `round_equivalence`
 --
 
-DROP TABLE IF EXISTS `stagingscore`;
+DROP TABLE IF EXISTS `round_equivalence`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `stagingscore` (
-  `staging_id` int NOT NULL AUTO_INCREMENT,
-  `archer_id` int NOT NULL,
+CREATE TABLE `round_equivalence` (
+  `equivalence_id` int NOT NULL AUTO_INCREMENT,
   `round_id` int NOT NULL,
-  `equipment_id` int NOT NULL,
-  `date_time` datetime NOT NULL,
-  `raw_score` int NOT NULL,
-  `status` enum('pending','approved','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
-  PRIMARY KEY (`staging_id`),
-  KEY `archer_id` (`archer_id`),
-  KEY `round_id` (`round_id`),
-  KEY `equipment_id` (`equipment_id`),
-  CONSTRAINT `stagingscore_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
-  CONSTRAINT `stagingscore_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
-  CONSTRAINT `stagingscore_ibfk_3` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  `equivalent_round_id` int NOT NULL,
+  PRIMARY KEY (`equivalence_id`),
+  KEY `FK_RoundEquivalence_Round_Source` (`round_id`),
+  KEY `FK_RoundEquivalence_Round_Target` (`equivalent_round_id`),
+  CONSTRAINT `FK_RoundEquivalence_Round_Source` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE,
+  CONSTRAINT `FK_RoundEquivalence_Round_Target` FOREIGN KEY (`equivalent_round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `stagingscore`
+-- Dumping data for table `round_equivalence`
 --
 
-LOCK TABLES `stagingscore` WRITE;
-/*!40000 ALTER TABLE `stagingscore` DISABLE KEYS */;
-INSERT INTO `stagingscore` VALUES (1,1,1,1,'2025-11-20 01:04:46',225,'approved'),(2,1,1,1,'2025-11-20 01:07:06',225,'pending'),(3,1,1,1,'2025-11-20 01:07:07',225,'pending'),(4,1,1,1,'2025-11-20 01:07:45',225,'pending'),(5,1,1,2,'2025-11-20 01:23:41',127,'pending');
-/*!40000 ALTER TABLE `stagingscore` ENABLE KEYS */;
+LOCK TABLES `round_equivalence` WRITE;
+/*!40000 ALTER TABLE `round_equivalence` DISABLE KEYS */;
+/*!40000 ALTER TABLE `round_equivalence` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

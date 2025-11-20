@@ -2,7 +2,7 @@
 --
 -- Host: localhost    Database: archery
 -- ------------------------------------------------------
--- Server version	8.0.43
+-- Server version	9.4.0
 
 /*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
@@ -24,9 +24,10 @@ DROP TABLE IF EXISTS `competition`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `competition` (
   `comp_id` int NOT NULL AUTO_INCREMENT,
-  `comp_name` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `comp_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
   `start_date` date NOT NULL,
   `end_date` date NOT NULL,
+  `is_club_championship` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`comp_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -37,7 +38,7 @@ CREATE TABLE `competition` (
 
 LOCK TABLES `competition` WRITE;
 /*!40000 ALTER TABLE `competition` DISABLE KEYS */;
-INSERT INTO `competition` VALUES (1,'Sydney Olympic Park Open','2024-04-21','2024-04-21'),(2,'Archery NSW State Championships','2024-05-10','2024-05-12'),(3,'National Indoor Series Qualifier','2024-06-01','2024-06-01');
+INSERT INTO `competition` VALUES (1,'Sydney Olympic Park Open','2024-04-21','2024-04-21',0),(2,'Archery NSW State Championships','2024-05-10','2024-05-12',0),(3,'National Indoor Series Qualifier','2024-06-01','2024-06-01',0);
 /*!40000 ALTER TABLE `competition` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -50,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 11:01:03
+-- Dump completed on 2025-11-20 16:13:37
