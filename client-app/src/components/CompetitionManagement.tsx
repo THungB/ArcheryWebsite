@@ -10,7 +10,8 @@ export default function CompetitionManagement() {
     roundType: '',
     distance: '',
     maxParticipants: '',
-    description: '',
+      description: '',
+      isClubChampionship: false
   });
 
   // Competitions will be loaded from backend - for now empty array

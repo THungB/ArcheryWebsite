@@ -17,11 +17,18 @@ namespace ArcheryWebsite.Controllers
 
         // GET: api/Round
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Round>>> GetRounds()
+        public async Task<ActionResult<IEnumerable<Round>>> GetRounds([FromQuery] bool includeHistory = false)
         {
             try
             {
-                var rounds = await _context.Rounds.ToListAsync();
+                var query = _context.Rounds.AsQueryable();
+
+                if (!includeHistory)
+                {
+                    query = query.Where(r => r.ValidTo == null);
+                }
+
+                var rounds = await query.ToListAsync();
                 return Ok(rounds);
             }
             catch (Exception ex)
