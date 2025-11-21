@@ -164,6 +164,12 @@ namespace ArcheryWebsite.Controllers
                 if (stagedData == null || !stagedData.Any())
                     throw new Exception("Invalid or empty score data.");
 
+                // Load cấu trúc RoundRange của Round này để map đúng Sequence
+                var roundRanges = await _context.Roundranges
+                    .Where(rr => rr.RoundId == stagingScore.RoundId)
+                    .OrderBy(rr => rr.SequenceNumber)
+                    .ToListAsync();
+
                 int grandTotal = 0;
 
                 // 3. Tạo Score Record
@@ -179,16 +185,24 @@ namespace ArcheryWebsite.Controllers
                 await _context.SaveChangesAsync(); // Để lấy ScoreId
 
                 // 4. Duyệt qua từng Range (Hiệp)
-                foreach (var rangeData in stagedData)
+                for (int i = 0; i < stagedData.Count; i++)
                 {
-                    for (int i = 0; i < rangeData.Ends.Count; i++)
+                    var rangeData = stagedData[i];
+                    // Tìm RoundRange tương ứng dựa vào Sequence (i + 1)
+                    var matchingRoundRange = roundRanges.FirstOrDefault(rr => rr.SequenceNumber == i + 1);
+                    
+                    int rangeIdToUse = matchingRoundRange?.RangeId ?? rangeData.RangeId;
+                    int? roundRangeIdToUse = matchingRoundRange?.Id;
+
+                    for (int endIdx = 0; endIdx < rangeData.Ends.Count; endIdx++)
                     {
-                        var arrowStrings = rangeData.Ends[i]; // Mảng string ["10", "X", "M"...]
+                        var arrowStrings = rangeData.Ends[endIdx]; // Mảng string ["10", "X", "M"...]
                         var end = new End
                         {
                             ScoreId = score.ScoreId,
-                            RangeId = rangeData.RangeId,
-                            EndNumber = i + 1,
+                            RangeId = rangeIdToUse,
+                            RoundRangeId = roundRangeIdToUse, // Lưu định danh chính xác của hiệp đấu
+                            EndNumber = endIdx + 1,
                             EndScore = 0
                         };
                         _context.Ends.Add(end);
@@ -198,9 +212,16 @@ namespace ArcheryWebsite.Controllers
                         foreach (var valStr in arrowStrings)
                         {
                             int point = 0;
+                            bool isX = false;
                             string cleanVal = valStr.ToUpper().Trim();
-                            if (cleanVal == "X" || cleanVal == "10") point = 10;
-                            else if (cleanVal == "M") point = 0;
+                            
+                            if (cleanVal == "X") 
+                            {
+                                point = 10;
+                                isX = true;
+                            }
+                            else if (cleanVal == "10") point = 10;
+                            else if (cleanVal == "M" || cleanVal == "") point = 0;
                             else int.TryParse(cleanVal, out point);
 
                             endTotal += point;
@@ -208,7 +229,8 @@ namespace ArcheryWebsite.Controllers
                             var arrow = new Arrow
                             {
                                 EndId = end.EndId,
-                                ArrowValue = point
+                                ArrowValue = point,
+                                IsX = isX
                             };
                             _context.Arrows.Add(arrow);
                         }

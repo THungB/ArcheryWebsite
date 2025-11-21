@@ -10,6 +10,7 @@ public partial class End
     public int ScoreId { get; set; }
 
     public int RangeId { get; set; }
+    public int? RoundRangeId { get; set; }
 
     public int EndNumber { get; set; }
 
@@ -20,4 +21,7 @@ public partial class End
     public virtual Range Range { get; set; } = null!;
 
     public virtual Score Score { get; set; } = null!;
+
+    // Navigation property tùy chọn đến RoundRange
+    public virtual Roundrange? RoundRange { get; set; }
 }

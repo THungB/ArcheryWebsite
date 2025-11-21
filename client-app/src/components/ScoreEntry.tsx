@@ -1,27 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, ChevronRight, ChevronLeft } from 'lucide-react'; // Đã bỏ Check, Target
-import { stagingScoreAPI, commonAPI, Round, Competition } from '../services/api';
-
-// Interface cho cấu trúc vòng đấu (nhận từ API)
-interface RangeStructure {
-    sequenceNumber: number;
-    rangeId: number;
-    distanceMeters: number;
-    endCount: number;
-    arrowsPerEnd: number;
-}
-
-interface RoundStructure {
-    roundId: number;
-    roundName: string;
-    ranges: RangeStructure[];
-}
-
-// Interface cho dữ liệu gửi đi (Payload)
-interface StagedRangeInput {
-    rangeId: number;
-    ends: string[][];
-}
+import { X, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { stagingScoreAPI, commonAPI, Round, Competition, RoundStructureDto } from '../services/api';
 
 // Dữ liệu lưu trữ điểm số: [RangeIndex][EndIndex][ArrowIndex]
 type ScoreState = string[][][];
@@ -38,7 +17,7 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
     const [equipmentId, setEquipmentId] = useState('');
 
     const [step, setStep] = useState<'setup' | 'scoring'>('setup');
-    const [roundStructure, setRoundStructure] = useState<RoundStructure | null>(null);
+    const [roundStructure, setRoundStructure] = useState<RoundStructureDto | null>(null);
 
     const [currentRangeIdx, setCurrentRangeIdx] = useState(0);
     const [currentEndIdx, setCurrentEndIdx] = useState(0);
@@ -47,7 +26,9 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
 
     const [roundsList, setRoundsList] = useState<Round[]>([]);
     const [competitionsList, setCompetitionsList] = useState<Competition[]>([]);
+
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLoadingStructure, setIsLoadingStructure] = useState(false);
 
     useEffect(() => {
         const loadData = async () => {
@@ -65,26 +46,34 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
     const handleStartScoring = async () => {
         if (!competitionId || !roundId || !equipmentId) return alert("Please fill all fields");
 
-        // MOCK DATA - Thay bằng API thực tế khi backend sẵn sàng: await commonAPI.getRoundStructure(roundId)
-        const structure: RoundStructure = {
-            roundId: parseInt(roundId),
-            roundName: "WA 720",
-            ranges: [
-                { sequenceNumber: 1, rangeId: 7, distanceMeters: 70, endCount: 6, arrowsPerEnd: 6 },
-                { sequenceNumber: 2, rangeId: 7, distanceMeters: 70, endCount: 6, arrowsPerEnd: 6 }
-            ]
-        };
+        setIsLoadingStructure(true);
+        try {
+            // [UPDATED] Gọi API thực tế để lấy cấu trúc vòng đấu
+            const structure = await commonAPI.getRoundStructure(parseInt(roundId));
 
-        setRoundStructure(structure);
+            if (!structure || !structure.ranges || structure.ranges.length === 0) {
+                alert("Error: This round has no range configuration.");
+                setIsLoadingStructure(false);
+                return;
+            }
 
-        const initialScores = structure.ranges.map(range =>
-            Array(range.endCount).fill(null).map(() =>
-                Array(range.arrowsPerEnd).fill('')
-            )
-        );
+            setRoundStructure(structure);
 
-        setScores(initialScores);
-        setStep('scoring');
+            // Khởi tạo mảng điểm dựa trên cấu trúc nhận được từ API
+            const initialScores = structure.ranges.map(range =>
+                Array(range.endCount).fill(null).map(() =>
+                    Array(range.arrowsPerEnd).fill('')
+                )
+            );
+
+            setScores(initialScores);
+            setStep('scoring');
+        } catch (error) {
+            console.error("Failed to load round structure", error);
+            alert("Failed to load round configuration. Please try again.");
+        } finally {
+            setIsLoadingStructure(false);
+        }
     };
 
     const handleArrowChange = (arrowIdx: number, value: string) => {
@@ -140,7 +129,8 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
             const token = localStorage.getItem('authToken') || '';
 
             // Map dữ liệu sang đúng kiểu Interface StagedRangeInput
-            const payloadData: StagedRangeInput[] = roundStructure.ranges.map((range, idx) => ({
+            // Lưu ý: Chúng ta gửi rangeId thực tế từ API
+            const payloadData = roundStructure.ranges.map((range, idx) => ({
                 rangeId: range.rangeId,
                 ends: scores[idx]
             }));
@@ -198,8 +188,13 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
                                 <option value="3">Barebow</option>
                             </select>
                         </div>
-                        <button onClick={handleStartScoring} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mt-4 hover:bg-blue-700 transition">
-                            Start Scoring
+                        <button
+                            onClick={handleStartScoring}
+                            disabled={isLoadingStructure}
+                            className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mt-4 hover:bg-blue-700 transition flex justify-center items-center gap-2"
+                        >
+                            {isLoadingStructure && <Loader2 className="w-4 h-4 animate-spin" />}
+                            {isLoadingStructure ? "Loading Configuration..." : "Start Scoring"}
                         </button>
                     </div>
                 </div>

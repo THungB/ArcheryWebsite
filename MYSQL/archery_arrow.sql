@@ -16,14 +16,23 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Dumping data for table `score`
+-- Table structure for table `arrow`
 --
 
-LOCK TABLES `score` WRITE;
-/*!40000 ALTER TABLE `score` DISABLE KEYS */;
-INSERT INTO `score` VALUES (1,1,1,NULL,'2025-11-20',225),(2,1,2,NULL,'2025-11-20',237),(3,1,5,NULL,'2025-11-20',60),(4,1,23,NULL,'2025-11-21',720);
-/*!40000 ALTER TABLE `score` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `arrow`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `arrow` (
+  `arrow_id` int NOT NULL AUTO_INCREMENT,
+  `end_id` int NOT NULL,
+  `arrow_value` int NOT NULL,
+  `is_x` bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (`arrow_id`),
+  KEY `end_id` (`end_id`),
+  CONSTRAINT `arrow_ibfk_1` FOREIGN KEY (`end_id`) REFERENCES `end` (`end_id`),
+  CONSTRAINT `arrow_chk_1` CHECK ((`arrow_value` between 0 and 10))
+) ENGINE=InnoDB AUTO_INCREMENT=217 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -34,4 +43,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 11:33:01
+-- Dump completed on 2025-11-21 12:12:44

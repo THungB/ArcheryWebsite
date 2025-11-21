@@ -10,6 +10,6 @@ public partial class Arrow
     public int EndId { get; set; }
 
     public int ArrowValue { get; set; }
-
+    public bool IsX { get; set; } = false;
     public virtual End End { get; set; } = null!;
 }

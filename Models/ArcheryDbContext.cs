@@ -35,6 +35,7 @@ public partial class ArcheryDbContext : DbContext
         modelBuilder
             .UseCollation("utf8mb4_unicode_ci")
             .HasCharSet("utf8mb4");
+
         modelBuilder.Entity<Range>(entity =>
         {
             entity.HasKey(e => e.RangeId).HasName("PRIMARY");
@@ -47,6 +48,7 @@ public partial class ArcheryDbContext : DbContext
                   .HasColumnName("face_size_cm")
                   .HasDefaultValue(122);
         });
+
         modelBuilder.Entity<Stagingscore>(entity =>
         {
             entity.HasKey(e => e.StagingId).HasName("PRIMARY");
@@ -81,6 +83,7 @@ public partial class ArcheryDbContext : DbContext
             entity.HasOne(d => d.Equipment).WithMany(p => p.Stagingscores)
                 .HasForeignKey(d => d.EquipmentId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("stagingscore_ibfk_3");
         });
+
         modelBuilder.Entity<RoundEquivalence>(entity =>
         {
             entity.ToTable("round_equivalence");
@@ -102,6 +105,7 @@ public partial class ArcheryDbContext : DbContext
                 .HasForeignKey(d => d.EquivalentRoundId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+
         modelBuilder.Entity<Archer>(entity =>
         {
             entity.HasKey(e => e.ArcherId).HasName("PRIMARY");
@@ -125,6 +129,13 @@ public partial class ArcheryDbContext : DbContext
             entity.Property(e => e.ArrowId).HasColumnName("arrow_id");
             entity.Property(e => e.ArrowValue).HasColumnName("arrow_value");
             entity.Property(e => e.EndId).HasColumnName("end_id");
+
+            // [MAPPING MỚI] Mapping cho cột IsX
+            entity.Property(e => e.IsX)
+                  .HasColumnName("is_x")
+                  .HasColumnType("bit")
+                  .HasDefaultValue(false);
+
             entity.HasOne(d => d.End).WithMany(p => p.Arrows).HasForeignKey(d => d.EndId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("arrow_ibfk_1");
         });
 
@@ -145,13 +156,24 @@ public partial class ArcheryDbContext : DbContext
             entity.ToTable("end");
             entity.HasIndex(e => e.RangeId, "range_id");
             entity.HasIndex(e => e.ScoreId, "score_id");
+
             entity.Property(e => e.EndId).HasColumnName("end_id");
             entity.Property(e => e.EndNumber).HasColumnName("end_number");
             entity.Property(e => e.EndScore).HasColumnName("end_score");
             entity.Property(e => e.RangeId).HasColumnName("range_id");
             entity.Property(e => e.ScoreId).HasColumnName("score_id");
+
+            // [MAPPING MỚI] Mapping cho cột RoundRangeId
+            entity.Property(e => e.RoundRangeId).HasColumnName("round_range_id");
+
             entity.HasOne(d => d.Range).WithMany(p => p.Ends).HasForeignKey(d => d.RangeId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("end_ibfk_2");
             entity.HasOne(d => d.Score).WithMany(p => p.Ends).HasForeignKey(d => d.ScoreId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("end_ibfk_1");
+
+            // [MỚI] Relationship với RoundRange (Optional)
+            entity.HasOne(d => d.RoundRange)
+                  .WithMany()
+                  .HasForeignKey(d => d.RoundRangeId)
+                  .HasConstraintName("fk_end_roundrange");
         });
 
         modelBuilder.Entity<Equipment>(entity =>

@@ -16,14 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Dumping data for table `end`
+-- Table structure for table `stagingscore`
 --
 
-LOCK TABLES `end` WRITE;
-/*!40000 ALTER TABLE `end` DISABLE KEYS */;
-INSERT INTO `end` VALUES (1,4,7,1,60),(2,4,7,2,60),(3,4,7,3,60),(4,4,7,4,60),(5,4,7,5,60),(6,4,7,6,60),(7,4,7,1,60),(8,4,7,2,60),(9,4,7,3,60),(10,4,7,4,60),(11,4,7,5,60),(12,4,7,6,60);
-/*!40000 ALTER TABLE `end` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `stagingscore`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stagingscore` (
+  `staging_id` int NOT NULL AUTO_INCREMENT,
+  `archer_id` int NOT NULL,
+  `round_id` int NOT NULL,
+  `equipment_id` int NOT NULL,
+  `date_time` datetime NOT NULL,
+  `raw_score` int NOT NULL,
+  `status` enum('pending','approved','rejected') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT 'pending',
+  `arrow_values` text COLLATE utf8mb4_unicode_ci,
+  PRIMARY KEY (`staging_id`),
+  KEY `archer_id` (`archer_id`),
+  KEY `round_id` (`round_id`),
+  KEY `equipment_id` (`equipment_id`),
+  CONSTRAINT `stagingscore_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
+  CONSTRAINT `stagingscore_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
+  CONSTRAINT `stagingscore_ibfk_3` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -34,4 +50,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 11:33:00
+-- Dump completed on 2025-11-21 12:12:43

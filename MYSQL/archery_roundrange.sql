@@ -16,13 +16,24 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Dumping data for table `__efmigrationshistory`
+-- Table structure for table `roundrange`
 --
 
-LOCK TABLES `__efmigrationshistory` WRITE;
-/*!40000 ALTER TABLE `__efmigrationshistory` DISABLE KEYS */;
-/*!40000 ALTER TABLE `__efmigrationshistory` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `roundrange`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `roundrange` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `round_id` int NOT NULL,
+  `range_id` int NOT NULL,
+  `sequence_number` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `round_id` (`round_id`),
+  KEY `range_id` (`range_id`),
+  CONSTRAINT `roundrange_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
+  CONSTRAINT `roundrange_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -33,4 +44,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 11:33:01
+-- Dump completed on 2025-11-21 12:12:44

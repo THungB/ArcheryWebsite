@@ -16,14 +16,22 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Dumping data for table `range`
+-- Table structure for table `round`
 --
 
-LOCK TABLES `range` WRITE;
-/*!40000 ALTER TABLE `range` DISABLE KEYS */;
-INSERT INTO `range` VALUES (1,18,10,122),(2,20,6,122),(3,30,6,122),(4,40,6,122),(5,50,6,122),(6,60,6,122),(7,70,6,122),(8,90,6,122);
-/*!40000 ALTER TABLE `range` ENABLE KEYS */;
-UNLOCK TABLES;
+DROP TABLE IF EXISTS `round`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `round` (
+  `round_id` int NOT NULL AUTO_INCREMENT,
+  `round_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `valid_from` date NOT NULL DEFAULT '2000-01-01',
+  `valid_to` date DEFAULT NULL,
+  `round_family_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`round_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -34,4 +42,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 11:33:00
+-- Dump completed on 2025-11-21 12:12:43

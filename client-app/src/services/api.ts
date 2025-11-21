@@ -35,6 +35,21 @@ export interface StagedRangeInput {
     ends: string[][];
 }
 
+// [NEW] Interfaces for Round Structure
+export interface RangeDetailDto {
+    sequenceNumber: number;
+    rangeId: number;
+    distanceMeters: number;
+    endCount: number;
+    arrowsPerEnd: number;
+}
+
+export interface RoundStructureDto {
+    roundId: number;
+    roundName: string;
+    ranges: RangeDetailDto[];
+}
+
 export interface LoginRequest { username: string; password: string; role: 'archer' | 'recorder'; }
 export interface LoginResponse { success: boolean; userId: string; token: string; role: string; username: string; }
 export interface Score { scoreId: number; archerId: number; roundId: number; compId?: number; dateShot: string; totalScore: number; }
@@ -60,12 +75,16 @@ export interface StagingScore {
 export interface Competition { compId: number; compName: string; }
 export interface ProcessScoreResponse { message: string; scoreId?: number; stagingScoreId: number; reason?: string; }
 export interface CreateArcherRequest { firstName: string; lastName: string; email: string; gender: string; dateOfBirth: string; phone?: string; defaultEquipmentId?: number; }
+export interface CreateStagingScoreRequest { archerId: number; roundId: number; equipmentId: number; scoreData: StagedRangeInput[]; }
 
 // --- API OBJECTS ---
 
 export const commonAPI = {
     getRounds: async (): Promise<Round[]> => apiCall<Round[]>('/Round'),
-    getCompetitions: async (): Promise<Competition[]> => apiCall<Competition[]>('/Competition')
+    getCompetitions: async (): Promise<Competition[]> => apiCall<Competition[]>('/Competition'),
+    // [NEW] Fetch round structure dynamically
+    getRoundStructure: async (roundId: number): Promise<RoundStructureDto> => 
+        apiCall<RoundStructureDto>(`/Round/${roundId}/structure`)
 };
 
 export const stagingScoreAPI = {
@@ -81,7 +100,6 @@ export const stagingScoreAPI = {
         return apiCall<StagingScore>(`/StagingScore/${stagingId}`, { headers: { Authorization: `Bearer ${token}` } });
     },
 
-    // [UPDATED] submitScore nhận StagedRangeInput[]
     submitScore: async (
         archerId: number,
         roundId: number,
