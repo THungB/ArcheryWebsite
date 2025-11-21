@@ -41,40 +41,28 @@ namespace ArcheryWebsite.Controllers
         [HttpGet("pending")]
         public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetPendingScores()
         {
-            try
+            var pendingScores = await _context.Stagingscores
+                .Where(ss => ss.Status == "pending")
+                .Include(ss => ss.Archer)
+                .Include(ss => ss.Round)
+                .Include(ss => ss.Equipment)
+                .OrderBy(ss => ss.DateTime)
+                .ToListAsync();
+
+            return Ok(pendingScores.Select(ss => new StagingScoreResponseDto
             {
-                var pendingScores = await _context.Stagingscores
-                    .Where(ss => ss.Status == "pending")
-                    .Include(ss => ss.Archer)
-                    .Include(ss => ss.Round)
-                    .Include(ss => ss.Equipment)
-                    .OrderBy(ss => ss.DateTime)
-                    .ToListAsync();
-
-                // Map to DTO
-                var responseDtos = pendingScores.Select(ss => new StagingScoreResponseDto
-                {
-                    StagingId = ss.StagingId,
-                    ArcherId = ss.ArcherId,
-                    RoundId = ss.RoundId,
-                    EquipmentId = ss.EquipmentId,
-                    DateTime = ss.DateTime,
-                    RawScore = ss.RawScore,
-                    Status = ss.Status ?? "pending",
-                    // Map ArrowValues để Frontend hiển thị chi tiết
-                    ArrowValues = ss.ArrowValues ?? "[]",
-
-                    ArcherName = $"{ss.Archer.FirstName} {ss.Archer.LastName}",
-                    RoundName = ss.Round.RoundName,
-                    EquipmentType = ss.Equipment.DivisionType
-                }).ToList();
-
-                return Ok(responseDtos);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error retrieving pending scores", error = ex.Message });
-            }
+                StagingId = ss.StagingId,
+                ArcherId = ss.ArcherId,
+                RoundId = ss.RoundId,
+                EquipmentId = ss.EquipmentId,
+                DateTime = ss.DateTime,
+                RawScore = ss.RawScore,
+                Status = ss.Status ?? "pending",
+                ArrowValues = ss.ArrowValues ?? "[]",
+                ArcherName = $"{ss.Archer.FirstName} {ss.Archer.LastName}",
+                RoundName = ss.Round.RoundName,
+                EquipmentType = ss.Equipment.DivisionType
+            }));
         }
 
         // GET: api/StagingScore/5
@@ -158,13 +146,11 @@ namespace ArcheryWebsite.Controllers
                 if (stagingScore == null) return NotFound("Staging score not found");
                 if (stagingScore.Status == "approved") return BadRequest("Already approved");
 
-                // 1. Deserialize JSON Data
-                // JSON structure: List<StagedRangeData>
+                // 1. Deserialize
                 var stagedData = JsonSerializer.Deserialize<List<StagedRangeData>>(stagingScore.ArrowValues ?? "[]");
-                if (stagedData == null || !stagedData.Any())
-                    throw new Exception("Invalid or empty score data.");
+                if (stagedData == null || !stagedData.Any()) throw new Exception("Invalid data.");
 
-                // Load cấu trúc RoundRange của Round này để map đúng Sequence
+                // 2. Load Round Ranges
                 var roundRanges = await _context.Roundranges
                     .Where(rr => rr.RoundId == stagingScore.RoundId)
                     .OrderBy(rr => rr.SequenceNumber)
@@ -172,23 +158,22 @@ namespace ArcheryWebsite.Controllers
 
                 int grandTotal = 0;
 
-                // 3. Tạo Score Record
+                // 3. Create Score
                 var score = new Score
                 {
                     ArcherId = stagingScore.ArcherId,
                     RoundId = stagingScore.RoundId,
                     CompId = competitionId,
                     DateShot = DateOnly.FromDateTime(stagingScore.DateTime),
-                    TotalScore = 0 // Sẽ cập nhật sau khi cộng dồn
+                    TotalScore = 0
                 };
                 _context.Scores.Add(score);
-                await _context.SaveChangesAsync(); // Để lấy ScoreId
+                await _context.SaveChangesAsync();
 
-                // 4. Duyệt qua từng Range (Hiệp)
+                // 4. Process Ranges
                 for (int i = 0; i < stagedData.Count; i++)
                 {
                     var rangeData = stagedData[i];
-                    // Tìm RoundRange tương ứng dựa vào Sequence (i + 1)
                     var matchingRoundRange = roundRanges.FirstOrDefault(rr => rr.SequenceNumber == i + 1);
                     
                     int rangeIdToUse = matchingRoundRange?.RangeId ?? rangeData.RangeId;
@@ -196,30 +181,37 @@ namespace ArcheryWebsite.Controllers
 
                     for (int endIdx = 0; endIdx < rangeData.Ends.Count; endIdx++)
                     {
-                        var arrowStrings = rangeData.Ends[endIdx]; // Mảng string ["10", "X", "M"...]
+                        var arrowStrings = rangeData.Ends[endIdx];
+
+                        // [UPDATED] SORTING LOGIC: Highest to Lowest (X -> 10 -> 9 ... -> M)
+                        var sortedArrows = arrowStrings
+                            .Select(a => new { 
+                                Original = a, 
+                                SortValue = GetSortValue(a) 
+                            })
+                            .OrderByDescending(x => x.SortValue)
+                            .Select(x => x.Original)
+                            .ToList();
+
                         var end = new End
                         {
                             ScoreId = score.ScoreId,
                             RangeId = rangeIdToUse,
-                            RoundRangeId = roundRangeIdToUse, // Lưu định danh chính xác của hiệp đấu
+                            RoundRangeId = roundRangeIdToUse,
                             EndNumber = endIdx + 1,
                             EndScore = 0
                         };
                         _context.Ends.Add(end);
-                        await _context.SaveChangesAsync(); // Để lấy EndId
+                        await _context.SaveChangesAsync();
 
                         int endTotal = 0;
-                        foreach (var valStr in arrowStrings)
+                        foreach (var valStr in sortedArrows) // Use sorted list
                         {
                             int point = 0;
                             bool isX = false;
                             string cleanVal = valStr.ToUpper().Trim();
                             
-                            if (cleanVal == "X") 
-                            {
-                                point = 10;
-                                isX = true;
-                            }
+                            if (cleanVal == "X") { point = 10; isX = true; }
                             else if (cleanVal == "10") point = 10;
                             else if (cleanVal == "M" || cleanVal == "") point = 0;
                             else int.TryParse(cleanVal, out point);
@@ -239,7 +231,6 @@ namespace ArcheryWebsite.Controllers
                     }
                 }
 
-                // 6. Cập nhật tổng điểm cuối cùng cho Score và StagingScore
                 score.TotalScore = grandTotal;
                 stagingScore.Status = "approved";
                 stagingScore.RawScore = grandTotal;
@@ -247,41 +238,34 @@ namespace ArcheryWebsite.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return Ok(new { message = "Score approved and processed successfully", scoreId = score.ScoreId });
+                return Ok(new { message = "Score approved", scoreId = score.ScoreId });
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return StatusCode(500, new { message = "Error processing approval", error = ex.Message });
+                return StatusCode(500, new { message = "Error approving", error = ex.Message });
             }
+        }
+
+        // Helper for sorting
+        private int GetSortValue(string val)
+        {
+            var v = val.ToUpper().Trim();
+            if (v == "X") return 11; // Highest
+            if (v == "M" || v == "") return -1; // Lowest
+            if (int.TryParse(v, out int p)) return p;
+            return 0;
         }
 
         // PUT: api/StagingScore/5/reject
         [HttpPut("{id}/reject")]
         public async Task<IActionResult> RejectScore(int id, [FromBody] string reason)
         {
-            try
-            {
-                var stagingScore = await _context.Stagingscores.FindAsync(id);
-                if (stagingScore == null)
-                {
-                    return NotFound(new { message = $"Staging score with ID {id} not found" });
-                }
-
-                stagingScore.Status = "rejected";
-                await _context.SaveChangesAsync();
-
-                return Ok(new
-                {
-                    message = "Score rejected",
-                    stagingScoreId = stagingScore.StagingId,
-                    reason
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error rejecting score", error = ex.Message });
-            }
+            var stagingScore = await _context.Stagingscores.FindAsync(id);
+            if (stagingScore == null) return NotFound();
+            stagingScore.Status = "rejected";
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Rejected" });
         }
 
         // DELETE: api/StagingScore/5

@@ -16,7 +16,7 @@ namespace ArcheryWebsite.Controllers
         }
 
         // GET: api/Round
-            [HttpGet]
+        [HttpGet]
         public async Task<ActionResult<IEnumerable<Round>>> GetRounds([FromQuery] bool includeHistory = false)
         {
             try
@@ -204,8 +204,8 @@ namespace ArcheryWebsite.Controllers
             return _context.Rounds.Any(e => e.RoundId == id);
         }
     
-    // GET: api/Round/5/structure
-[HttpGet("{id}/structure")]
+        // GET: api/Round/5/structure
+        [HttpGet("{id}/structure")]
         public async Task<ActionResult<RoundStructureDto>> GetRoundStructure(int id)
         {
             var round = await _context.Rounds.FindAsync(id);
@@ -227,11 +227,12 @@ namespace ArcheryWebsite.Controllers
                     RangeId = rr.RangeId,
                     DistanceMeters = rr.Range.DistanceMeters,
                     EndCount = rr.Range.EndCount,
-                    ArrowsPerEnd = 6
+                    ArrowsPerEnd = 6, // Giả định mặc định, có thể thêm cột này vào DB nếu cần
+                    FaceSizeCm = rr.Range.FaceSizeCm // [UPDATED] Map FaceSize
                 }).ToList()
             };
 
             return Ok(dto);
         }
     }
-    }
+}

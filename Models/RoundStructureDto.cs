@@ -9,10 +9,11 @@
 
     public class RangeDetailDto
     {
-        public int SequenceNumber { get; set; } 
+        public int SequenceNumber { get; set; }
         public int RangeId { get; set; }
         public int DistanceMeters { get; set; }
         public int EndCount { get; set; }
         public int ArrowsPerEnd { get; set; } = 6;
+        public int FaceSizeCm { get; set; }
     }
 }
