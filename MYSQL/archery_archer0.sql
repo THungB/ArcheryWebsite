@@ -33,8 +33,18 @@ CREATE TABLE `archer` (
   `user_id` int DEFAULT NULL,
   `phone` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`archer_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `archer`
+--
+
+LOCK TABLES `archer` WRITE;
+/*!40000 ALTER TABLE `archer` DISABLE KEYS */;
+INSERT INTO `archer` VALUES (1,'Nguyen','Van A','Male','1995-05-15','a.nguyen@email.com',1,NULL,NULL),(2,'Tran','Thi B','Female','2005-08-20','b.tran@email.com',1,NULL,NULL),(3,'Le','Van C','Male','1970-01-10','c.le@email.com',2,NULL,NULL),(4,'Pham','Thi D','Female','2008-11-30','d.pham@email.com',3,NULL,NULL),(5,'Hoang','Van E','Male','1960-03-25','e.hoang@email.com',5,NULL,NULL),(6,'Do','Thi F','Female','2011-06-01','f.do@email.com',1,NULL,NULL),(7,'Vo','Van G','Male','1990-12-12','g.vo@email.com',2,NULL,NULL),(8,'Bui','Thi H','Female','1998-09-09','h.bui@email.com',4,NULL,NULL),(9,'Dang','Van I','Male','2007-02-14','i.dang@email.com',1,NULL,NULL),(10,'Ngo','Thi K','Female','1950-10-20','k.ngo@email.com',5,NULL,NULL);
+/*!40000 ALTER TABLE `archer` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -45,4 +55,4 @@ CREATE TABLE `archer` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:50
+-- Dump completed on 2025-11-21 18:24:28

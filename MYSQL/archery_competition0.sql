@@ -29,8 +29,18 @@ CREATE TABLE `competition` (
   `end_date` date NOT NULL,
   `is_club_championship` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`comp_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `competition`
+--
+
+LOCK TABLES `competition` WRITE;
+/*!40000 ALTER TABLE `competition` DISABLE KEYS */;
+INSERT INTO `competition` VALUES (1,'Summer Club Championship 2024','2024-06-15','2024-06-16',1),(2,'Weekly Shoot Nov Week 1','2024-11-01','2024-11-01',0);
+/*!40000 ALTER TABLE `competition` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -41,4 +51,4 @@ CREATE TABLE `competition` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:49
+-- Dump completed on 2025-11-21 18:24:28
