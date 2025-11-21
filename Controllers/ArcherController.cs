@@ -182,6 +182,58 @@ namespace ArcheryWebsite.Controllers
             }
         }
 
+        // Thêm vào ArcherController.cs
+
+        [HttpGet("{id}/analytics")]
+        public async Task<ActionResult> GetArcherAnalytics(int id)
+        {
+            try
+            {
+                var scores = await _context.Scores
+                    .Where(s => s.ArcherId == id)
+                    .OrderBy(s => s.DateShot)
+                    .Select(s => new { s.DateShot, s.TotalScore, s.Round.RoundName })
+                    .ToListAsync();
+
+                if (!scores.Any()) return Ok(new { hasData = false });
+
+                // 1. Tính toán cơ bản
+                double average = scores.Average(s => s.TotalScore);
+                int max = scores.Max(s => s.TotalScore);
+
+                // 2. Tính độ lệch chuẩn (Consistency)
+                // StdDev càng nhỏ => Bắn càng đều tay
+                double sumOfSquaresOfDifferences = scores.Select(val => (val.TotalScore - average) * (val.TotalScore - average)).Sum();
+                double stdDev = Math.Sqrt(sumOfSquaresOfDifferences / scores.Count);
+
+                // 3. Xu hướng (Trend) - So sánh 3 trận gần nhất với trung bình
+                var recent = scores.TakeLast(3).Average(s => s.TotalScore);
+                string trend = recent > average ? "Improving" : (recent < average - 10 ? "Declining" : "Stable");
+
+                return Ok(new
+                {
+                    hasData = true,
+                    overview = new
+                    {
+                        averageScore = Math.Round(average, 1),
+                        personalBest = max,
+                        consistencyRating = Math.Round(stdDev, 1), // Thấp là tốt
+                        trend = trend,
+                        totalRounds = scores.Count
+                    },
+                    history = scores.Select(s => new {
+                        date = s.DateShot.ToString("dd/MM"),
+                        score = s.TotalScore,
+                        round = s.RoundName
+                    })
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error analyzing data", error = ex.Message });
+            }
+        }
+
         // [QUAN TRỌNG] Đây là hàm Data Science mà bạn đang thiếu
         // GET: api/Archer/5/personal-bests
         [HttpGet("{id}/personal-bests")]

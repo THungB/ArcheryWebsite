@@ -56,6 +56,19 @@ export interface ScoreDetailResponse {
     ends: ScoreDetailEnd[];
 }
 
+// [NEW] Interface cho Analytics response (used by AnalyticsDashboard)
+export interface AnalyticsData {
+    hasData: boolean;
+    overview: {
+        averageScore: number;
+        personalBest: number;
+        consistencyRating: number;
+        trend: string;
+        totalRounds: number;
+    };
+    history: { date: string; score: number; round: string }[];
+}
+
 export interface StagingScore { stagingId: number; archerId: number; roundId: number; equipmentId: number; dateTime: string; rawScore: number; status: string; arrowValues: string; archerName?: string; roundName?: string; equipmentType?: string; }
 export interface ProcessScoreResponse { message: string; scoreId?: number; }
 export interface CreateArcherRequest { firstName: string; lastName: string; email: string; gender: string; dateOfBirth: string; phone?: string; defaultEquipmentId?: number; }
@@ -140,7 +153,11 @@ export const stagingScoreAPI = {
 export const archerAPI = {
     getScores: (id: string, token: string) => apiCall<Score[]>(`/Archer/${id}/scores`, { headers: { Authorization: `Bearer ${token}` } }),
     getPersonalBests: (id: number | string, token: string) =>
-        apiCall<PersonalBest[]>(`/Archer/${id}/personal-bests`, { headers: { Authorization: `Bearer ${token}` } })
+        apiCall<PersonalBest[]>(`/Archer/${id}/personal-bests`, { headers: { Authorization: `Bearer ${token}` } }),
+
+    // [NEW] Use archerAPI.getAnalytics instead of manual fetch in AnalyticsDashboard
+    getAnalytics: (id: string, token: string) =>
+        apiCall<AnalyticsData>(`/Archer/${id}/analytics`, { headers: { Authorization: `Bearer ${token}` } })
 };
 
 export const recorderAPI = {

@@ -13,6 +13,8 @@ import { StatCard } from './ui/stat-card';
 import { AICoach } from './AICoach';
 // [NEW] Import kiểu Competition
 import { Competition } from '../services/api';
+// [NEW] Import Analytics Dashboard
+import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface ArcherDashboardProps {
     userId: string;
@@ -91,13 +93,17 @@ export function ArcherDashboard({ userId, onLogout }: ArcherDashboardProps) {
                         </div>
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
-                        <Tabs defaultValue="scores" className="space-y-6">
-                            <TabsList className="grid w-full grid-cols-3">
+                        <Tabs defaultValue="analytics" className="space-y-6">
+                            <TabsList className="grid w-full grid-cols-4">
+                                <TabsTrigger value="analytics">Analytics</TabsTrigger>
                                 <TabsTrigger value="scores">My Scores</TabsTrigger>
                                 <TabsTrigger value="personal-bests">Personal Bests</TabsTrigger>
                                 <TabsTrigger value="competitions">Competitions</TabsTrigger>
                             </TabsList>
 
+                            <TabsContent value="analytics" className="space-y-4">
+                                <AnalyticsDashboard userId={userId} />
+                            </TabsContent>
                             <TabsContent value="scores" className="space-y-4">
                                 <MyScores userId={userId} />
                             </TabsContent>
