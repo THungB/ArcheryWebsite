@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ArcheryWebsite.Models;
+using System.Text.Json;
 
 namespace ArcheryWebsite.Controllers
 {
@@ -28,6 +29,7 @@ namespace ArcheryWebsite.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error retrieving competitions: {ex.Message}");
                 return StatusCode(500, new { message = "Error retrieving competitions", error = ex.Message });
             }
         }
@@ -49,6 +51,7 @@ namespace ArcheryWebsite.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error retrieving competition {id}: {ex.Message}");
                 return StatusCode(500, new { message = "Error retrieving competition", error = ex.Message });
             }
         }
@@ -59,28 +62,44 @@ namespace ArcheryWebsite.Controllers
         {
             try
             {
-                // Validation
+                if (competition == null)
+                    return BadRequest(new { message = "Competition payload is required" });
+
                 if (string.IsNullOrWhiteSpace(competition.CompName))
-                {
                     return BadRequest(new { message = "Competition name is required" });
-                }
 
                 if (competition.EndDate < competition.StartDate)
-                {
                     return BadRequest(new { message = "End date cannot be before start date" });
+
+                // Ensure Details is valid JSON; default to empty object if not provided.
+                if (string.IsNullOrWhiteSpace(competition.Details))
+                {
+                    competition.Details = "{}";
+                }
+                else
+                {
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(competition.Details);
+                        // Normalize/serialize to a compact JSON string before saving
+                        competition.Details = JsonSerializer.Serialize(doc.RootElement);
+                    }
+                    catch (JsonException jex)
+                    {
+                        Console.WriteLine($"Invalid JSON in Details: {jex.Message}");
+                        return BadRequest(new { message = "Invalid JSON in Details field", error = jex.Message });
+                    }
                 }
 
                 _context.Competitions.Add(competition);
                 await _context.SaveChangesAsync();
 
-                return CreatedAtAction(
-                    nameof(GetCompetition),
-                    new { id = competition.CompId },
-                    competition
-                );
+                return CreatedAtAction(nameof(GetCompetition), new { id = competition.CompId }, competition);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error creating competition: {ex.Message}");
+                if (ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
                 return StatusCode(500, new { message = "Error creating competition", error = ex.Message });
             }
         }
@@ -89,28 +108,44 @@ namespace ArcheryWebsite.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCompetition(int id, Competition competition)
         {
-            if (id != competition.CompId)
-            {
-                return BadRequest(new { message = "Competition ID mismatch" });
-            }
+            if (competition == null || id != competition.CompId)
+                return BadRequest(new { message = "Competition payload is required and ID must match" });
 
             try
             {
-                var existingCompetition = await _context.Competitions.FindAsync(id);
-                if (existingCompetition == null)
+                var existing = await _context.Competitions.FindAsync(id);
+                if (existing == null) return NotFound(new { message = $"Competition with ID {id} not found" });
+
+                existing.CompName = competition.CompName;
+                existing.StartDate = competition.StartDate;
+                existing.EndDate = competition.EndDate;
+                existing.Location = competition.Location;
+                existing.IsClubChampionship = competition.IsClubChampionship;
+
+                // Validate and normalize Details JSON if provided; allow empty string / null -> store "{}"
+                if (string.IsNullOrWhiteSpace(competition.Details))
                 {
-                    return NotFound(new { message = $"Competition with ID {id} not found" });
+                    existing.Details = "{}";
+                }
+                else
+                {
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(competition.Details);
+                        existing.Details = JsonSerializer.Serialize(doc.RootElement);
+                    }
+                    catch (JsonException jex)
+                    {
+                        Console.WriteLine($"Invalid JSON in Details on update: {jex.Message}");
+                        return BadRequest(new { message = "Invalid JSON in Details field", error = jex.Message });
+                    }
                 }
 
-                // Update properties
-                existingCompetition.CompName = competition.CompName;
-                existingCompetition.StartDate = competition.StartDate;
-                existingCompetition.EndDate = competition.EndDate;
-
+                _context.Entry(existing).State = EntityState.Modified;
                 await _context.SaveChangesAsync();
 
-                return Ok(new { message = "Competition updated successfully", competition = existingCompetition });
-            }
+                return Ok(existing);
+            }                                                                       
             catch (DbUpdateConcurrencyException)
             {
                 if (!CompetitionExists(id))
@@ -121,6 +156,7 @@ namespace ArcheryWebsite.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error updating competition {id}: {ex.Message}");
                 return StatusCode(500, new { message = "Error updating competition", error = ex.Message });
             }
         }
@@ -131,134 +167,18 @@ namespace ArcheryWebsite.Controllers
         {
             try
             {
-                var competition = await _context.Competitions.FindAsync(id);
-                if (competition == null)
-                {
-                    return NotFound(new { message = $"Competition with ID {id} not found" });
-                }
+                var comp = await _context.Competitions.FindAsync(id);
+                if (comp == null) return NotFound(new { message = $"Competition with ID {id} not found" });
 
-                _context.Competitions.Remove(competition);
+                _context.Competitions.Remove(comp);
                 await _context.SaveChangesAsync();
 
                 return Ok(new { message = "Competition deleted successfully", competitionId = id });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Error deleting competition {id}: {ex.Message}");
                 return StatusCode(500, new { message = "Error deleting competition", error = ex.Message });
-            }
-        }
-
-        // GET: api/Competition/5/scores
-        [HttpGet("{id}/scores")]
-        public async Task<ActionResult<IEnumerable<Score>>> GetCompetitionScores(int id)
-        {
-            try
-            {
-                var competition = await _context.Competitions.FindAsync(id);
-                if (competition == null)
-                {
-                    return NotFound(new { message = $"Competition with ID {id} not found" });
-                }
-
-                var scores = await _context.Scores
-                    .Where(s => s.CompId == id)
-                    .Include(s => s.Archer)
-                    .Include(s => s.Round)
-                    .OrderByDescending(s => s.TotalScore)
-                    .ToListAsync();
-
-                return Ok(scores);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error retrieving competition scores", error = ex.Message });
-            }
-        }
-
-        // GET: api/Competition/5/leaderboard
-        [HttpGet("{id}/leaderboard")]
-        public async Task<ActionResult> GetCompetitionLeaderboard(int id)
-        {
-            try
-            {
-                var competition = await _context.Competitions.FindAsync(id);
-                if (competition == null)
-                {
-                    return NotFound(new { message = $"Competition with ID {id} not found" });
-                }
-
-                var leaderboard = await _context.Scores
-                    .Where(s => s.CompId == id)
-                    .Include(s => s.Archer)
-                    .Include(s => s.Round)
-                    .OrderByDescending(s => s.TotalScore)
-                    .Select(s => new
-                    {
-                        archerId = s.ArcherId,
-                        archerName = s.Archer.FirstName + " " + s.Archer.LastName,
-                        roundName = s.Round.RoundName,
-                        totalScore = s.TotalScore,
-                        dateShot = s.DateShot
-                    })
-                    .ToListAsync();
-
-                // Add rank
-                var rankedLeaderboard = leaderboard
-                    .Select((item, index) => new
-                    {
-                        rank = index + 1,
-                        item.archerId,
-                        item.archerName,
-                        item.roundName,
-                        item.totalScore,
-                        item.dateShot
-                    });
-
-                return Ok(rankedLeaderboard);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error retrieving leaderboard", error = ex.Message });
-            }
-        }
-
-        // GET: api/Competition/upcoming
-        [HttpGet("upcoming")]
-        public async Task<ActionResult<IEnumerable<Competition>>> GetUpcomingCompetitions()
-        {
-            try
-            {
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var competitions = await _context.Competitions
-                    .Where(c => c.StartDate >= today)
-                    .OrderBy(c => c.StartDate)
-                    .ToListAsync();
-
-                return Ok(competitions);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error retrieving upcoming competitions", error = ex.Message });
-            }
-        }
-
-        // GET: api/Competition/past
-        [HttpGet("past")]
-        public async Task<ActionResult<IEnumerable<Competition>>> GetPastCompetitions()
-        {
-            try
-            {
-                var today = DateOnly.FromDateTime(DateTime.Today);
-                var competitions = await _context.Competitions
-                    .Where(c => c.EndDate < today)
-                    .OrderByDescending(c => c.EndDate)
-                    .ToListAsync();
-
-                return Ok(competitions);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "Error retrieving past competitions", error = ex.Message });
             }
         }
 

@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CheckCircle, XCircle, Eye, AlertTriangle, Loader2, User, Target, Award, ChevronDown, ChevronUp } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, AlertTriangle, Loader2, User, Target, Award, ChevronDown, ChevronUp, Clock } from 'lucide-react';
 import { stagingScoreAPI, StagingScore, StagedRangeInput } from '../services/api';
+import { toast } from 'sonner'; // [NEW] Sử dụng Sonner Toast
 
 export function ScoreApproval() {
     const [pendingScores, setPendingScores] = useState<StagingScore[]>([]);
@@ -34,17 +35,35 @@ export function ScoreApproval() {
     const handleApprove = async () => {
         if (!selectedScore) return;
         setIsProcessing(true);
+        const approveTime = new Date().toLocaleTimeString(); // [NEW] Capture time
+
         try {
             const token = localStorage.getItem('authToken') || 'dummy-token';
+            
+            // [LOGIC] Nếu trong StagingScore (hoặc JSON của nó) có competitionId, 
+            // chúng ta nên extract nó ra để pass vào hàm approve.
+            // Hiện tại giả định competitionId được xử lý ở backend hoặc chọn thủ công nếu cần.
+            
             await stagingScoreAPI.approveScore(selectedScore.stagingId, undefined, token);
+            
+            // [NEW] Toast Notification với chi tiết thời gian
+            toast.success(
+                <div className="flex flex-col gap-1">
+                    <span className="font-bold">Score Approved Successfully!</span>
+                    <span className="text-xs opacity-90 flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Processed at: {approveTime}
+                    </span>
+                    <span className="text-xs">Archer ID: {selectedScore.archerId}</span>
+                </div>
+            );
+
             setPendingScores(prev => prev.filter(s => s.stagingId !== selectedScore.stagingId));
             setSelectedScore(null);
             setRejectionReason('');
         } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            toast.error(`Approval Failed: ${errorMessage}`);
             console.error('Error approving score:', err);
-            // [FIXED] Xử lý lỗi chuẩn TypeScript thay vì dùng any
-            const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
-            alert('Failed to approve score: ' + errorMessage);
         } finally {
             setIsProcessing(false);
         }
@@ -53,15 +72,29 @@ export function ScoreApproval() {
     const handleReject = async () => {
         if (!selectedScore || !rejectionReason.trim()) return;
         setIsProcessing(true);
+        const rejectTime = new Date().toLocaleTimeString();
+
         try {
             const token = localStorage.getItem('authToken') || 'dummy-token';
             await stagingScoreAPI.rejectScore(selectedScore.stagingId, rejectionReason, token);
+            
+            // [NEW] Toast Notification
+            toast.success(
+                <div className="flex flex-col gap-1">
+                    <span className="font-bold text-red-600">Score Rejected</span>
+                    <span className="text-xs text-gray-500">Reason: {rejectionReason}</span>
+                    <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Time: {rejectTime}</span>
+                    <span className="text-xs">Archer ID: {selectedScore.archerId}</span>
+                </div>
+            );
+
             setPendingScores(prev => prev.filter(s => s.stagingId !== selectedScore.stagingId));
             setSelectedScore(null);
             setRejectionReason('');
         } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+            toast.error(`Reject Failed: ${errorMessage}`);
             console.error('Error rejecting score:', err);
-            alert('Failed to reject score');
         } finally {
             setIsProcessing(false);
         }
@@ -111,9 +144,22 @@ export function ScoreApproval() {
     };
 
     // Helper lấy tên hiển thị an toàn (ưu tiên dữ liệu phẳng từ DTO mới)
-    const getArcherName = (s: StagingScore) => s.archerName || (s.archer ? `${s.archer.firstName} ${s.archer.lastName}` : `ID: ${s.archerId}`);
-    const getRoundName = (s: StagingScore) => s.roundName || s.round?.roundName || `Round #${s.roundId}`;
-    const getEquipmentName = (s: StagingScore) => s.equipmentType || s.equipment?.divisionType || `Equip #${s.equipmentId}`;
+    const getArcherName = (s: StagingScore) => s.archerName || `ID: ${s.archerId}`;
+    const getRoundName = (s: StagingScore) => s.roundName || `Round #${s.roundId}`;
+    const getEquipmentName = (s: StagingScore) => s.equipmentType || `Equip #${s.equipmentId}`;
+
+    // Helper render timestamp nhận được
+    const renderSubmittedTime = (dateString: string) => {
+        const date = new Date(dateString);
+        return (
+            <div className="flex flex-col text-sm text-gray-600 dark:text-gray-400">
+                <span>{date.toLocaleDateString()}</span>
+                <span className="text-xs opacity-75 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {date.toLocaleTimeString()}
+                </span>
+            </div>
+        );
+    };
 
     if (loading) {
         return (
@@ -184,7 +230,7 @@ export function ScoreApproval() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getRoundName(score)}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getEquipmentName(score)}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                                    {new Date(score.dateTime).toLocaleDateString()}
+                                                    {renderSubmittedTime(score.dateTime)}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-right">
                                                     <button onClick={() => setSelectedScore(score)} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">

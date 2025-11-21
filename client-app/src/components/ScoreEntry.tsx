@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-// [FIX] Đã thêm ChevronRight, ChevronLeft vào import để sửa lỗi "Cannot find name"
-import { X, Loader2, Target, ChevronRight, ChevronLeft } from 'lucide-react';
+import { X, Loader2, Target, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import { stagingScoreAPI, commonAPI, Round, Competition, Equipment, RoundStructureDto } from '../services/api';
 
 // Dữ liệu lưu trữ điểm số: [RangeIndex][EndIndex][ArrowIndex]
@@ -10,12 +9,17 @@ interface ScoreEntryProps {
     userId: string;
     onClose: () => void;
     onSubmit: () => void;
+    // [NEW] Nhận giải đấu được chọn sẵn từ màn hình trước
+    preSelectedComp?: Competition | null;
 }
 
-export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProps) {
-    const [competitionId, setCompetitionId] = useState('');
-    const [roundId, setRoundId] = useState('');
-    const [equipmentId, setEquipmentId] = useState('');
+export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp }: ScoreEntryProps) {
+    // Default to practice mode OR the pre-selected competition
+    const [competitionId, setCompetitionId] = useState<string>(
+        preSelectedComp ? preSelectedComp.compId.toString() : 'practice'
+    );
+    const [roundId, setRoundId] = useState<string>('');
+    const [equipmentId, setEquipmentId] = useState<string>('');
 
     const [step, setStep] = useState<'setup' | 'scoring'>('setup');
     const [roundStructure, setRoundStructure] = useState<RoundStructureDto | null>(null);
@@ -24,13 +28,19 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
     const [currentEndIdx, setCurrentEndIdx] = useState(0);
     const [scores, setScores] = useState<ScoreState>([]);
 
-    const [roundsList, setRoundsList] = useState<Round[]>([]);
+    // Danh sách đầy đủ
+    const [allRounds, setAllRounds] = useState<Round[]>([]);
+    const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
     const [competitionsList, setCompetitionsList] = useState<Competition[]>([]);
-    const [equipmentList, setEquipmentList] = useState<Equipment[]>([]);
+
+    // Danh sách hiển thị (đã lọc theo luật giải đấu)
+    const [filteredRounds, setFilteredRounds] = useState<Round[]>([]);
+    const [filteredEquipment, setFilteredEquipment] = useState<Equipment[]>([]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingStructure, setIsLoadingStructure] = useState(false);
 
+    // 1. Load Initial Data
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -39,18 +49,79 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
                     commonAPI.getCompetitions(),
                     commonAPI.getEquipment()
                 ]);
-                setRoundsList(r);
+                setAllRounds(r);
                 setCompetitionsList(c);
-                setEquipmentList(e);
+                setAllEquipment(e);
+
+                // Mặc định hiển thị tất cả nếu không có giải đấu nào được chọn
+                if (!preSelectedComp) {
+                    setFilteredRounds(r);
+                    setFilteredEquipment(e);
+                }
             } catch (error) {
                 console.error("Failed to load initial data", error);
             }
         };
         loadData();
-    }, []);
+    }, []); // Chỉ chạy 1 lần khi mount
+
+    // 2. [LOGIC MỚI] Lọc danh sách & Auto-select khi competitionId thay đổi
+    useEffect(() => {
+        // Nếu là Practice Mode -> Cho phép chọn tất cả
+        if (competitionId === 'practice') {
+            setFilteredRounds(allRounds);
+            setFilteredEquipment(allEquipment);
+            return;
+        }
+
+        // Tìm giải đấu đang chọn (có thể là preSelectedComp hoặc chọn từ dropdown)
+        const selectedComp = competitionsList.find(c => c.compId.toString() === competitionId) || preSelectedComp;
+
+        if (selectedComp && selectedComp.details) {
+            try {
+                const rules = JSON.parse(selectedComp.details);
+
+                // --- Lọc Rounds ---
+                let validRounds = allRounds;
+                if (rules.rounds && rules.rounds.length > 0) {
+                    // Chỉ lấy các round có ID nằm trong danh sách cho phép
+                    validRounds = allRounds.filter(r => rules.rounds.includes(r.roundId));
+                }
+                setFilteredRounds(validRounds);
+                // Nếu chỉ có 1 round hợp lệ -> Tự chọn luôn
+                if (validRounds.length === 1) setRoundId(validRounds[0].roundId.toString());
+                else setRoundId(''); // Reset nếu có nhiều lựa chọn
+
+                // --- Lọc Equipment ---
+                let validEquipment = allEquipment;
+                if (rules.divisions && rules.divisions.length > 0) {
+                    // [FIX] So sánh linh hoạt hơn (Trim + Lowercase) để tránh lỗi không khớp nhẹ
+                    validEquipment = allEquipment.filter(eq =>
+                        rules.divisions.some((allowedDiv: string) =>
+                            (allowedDiv ?? '').toString().trim().toLowerCase() === (eq.divisionType ?? '').toString().trim().toLowerCase()
+                        )
+                    );
+                }
+                setFilteredEquipment(validEquipment);
+                // Nếu chỉ có 1 loại cung hợp lệ -> Tự chọn luôn
+                if (validEquipment.length === 1) setEquipmentId(validEquipment[0].equipmentId.toString());
+                else setEquipmentId('');
+
+            } catch (e) {
+                console.warn("Invalid rules JSON", e);
+                // Fallback: hiện tất cả nếu lỗi JSON
+                setFilteredRounds(allRounds);
+                setFilteredEquipment(allEquipment);
+            }
+        } else {
+            // Giải đấu cũ không có details -> Hiện tất cả
+            setFilteredRounds(allRounds);
+            setFilteredEquipment(allEquipment);
+        }
+    }, [competitionId, allRounds, allEquipment, preSelectedComp, competitionsList]);
 
     const handleStartScoring = async () => {
-        if (!competitionId || !roundId || !equipmentId) return alert("Please fill all fields");
+        if (!roundId || !equipmentId) return alert("Please select Round and Equipment");
         setIsLoadingStructure(true);
         try {
             const structure = await commonAPI.getRoundStructure(parseInt(roundId));
@@ -124,7 +195,17 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
                 rangeId: range.rangeId,
                 ends: scores[idx]
             }));
-            await stagingScoreAPI.submitScore(parseInt(userId), parseInt(roundId), parseInt(equipmentId), payloadData, token);
+
+            const compIdToSend = competitionId === 'practice' ? null : (competitionId ? parseInt(competitionId) : null);
+
+            await stagingScoreAPI.submitScore(
+                parseInt(userId),
+                parseInt(roundId),
+                parseInt(equipmentId),
+                payloadData,
+                token,
+                compIdToSend
+            );
             onSubmit();
             onClose();
         } catch (err) {
@@ -137,37 +218,60 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
 
     if (step === 'setup') {
         return (
-            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-                <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-xl p-6">
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
+                <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-xl p-6 relative">
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-xl font-bold">New Scorecard</h2>
-                        <button onClick={onClose}><X className="w-6 h-6" /></button>
+                        <h2 className="text-xl font-bold text-gray-900 dark:text-white">New Scorecard</h2>
+                        <button onClick={onClose} className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full"><X className="w-6 h-6" /></button>
                     </div>
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                         <div>
-                            <label className="block text-sm font-medium mb-1">Competition</label>
-                            <select className="w-full p-2 border rounded-lg bg-transparent" value={competitionId} onChange={e => setCompetitionId(e.target.value)}>
-                                <option value="">Select...</option>
-                                {competitionsList.map(c => <option key={c.compId} value={c.compId}>{c.compName}</option>)}
-                            </select>
+                            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Event Mode</label>
+                            <div className="relative">
+                                <select
+                                    className={`w-full p-3 border rounded-lg bg-white dark:bg-slate-800 appearance-none ${preSelectedComp ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
+                                    value={competitionId}
+                                    disabled={!!preSelectedComp} // [NEW] Khóa nếu đã chọn từ trước
+                                    onChange={e => setCompetitionId(e.target.value)}
+                                >
+                                    <option value="practice">🎯 Practice Mode</option>
+                                    <optgroup label="Official Competitions">
+                                        {competitionsList.map(c => (
+                                            <option key={c.compId} value={c.compId}>{c.compName}</option>
+                                        ))}
+                                    </optgroup>
+                                </select>
+                                {/* Icon khóa nếu bị disabled */}
+                                {preSelectedComp && <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />}
+                            </div>
+                            {competitionId !== 'practice' && (
+                                <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                                    <Target className="w-3 h-3" /> Rules & Equipment restricted by event.
+                                </p>
+                            )}
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium mb-1">Round</label>
-                            <select className="w-full p-2 border rounded-lg bg-transparent" value={roundId} onChange={e => setRoundId(e.target.value)}>
-                                <option value="">Select...</option>
-                                {roundsList.map(r => <option key={r.roundId} value={r.roundId}>{r.roundName}</option>)}
+                            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Round (Distance)</label>
+                            <select className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800" value={roundId} onChange={e => setRoundId(e.target.value)}>
+                                <option value="">-- Select Round --</option>
+                                {filteredRounds.map(r => <option key={r.roundId} value={r.roundId}>{r.roundName}</option>)}
                             </select>
+                            {filteredRounds.length === 0 && <p className="text-xs text-red-500 mt-1">No valid rounds available for this event.</p>}
                         </div>
+
                         <div>
-                            <label className="block text-sm font-medium mb-1">Equipment</label>
-                            <select className="w-full p-2 border rounded-lg bg-transparent" value={equipmentId} onChange={e => setEquipmentId(e.target.value)}>
-                                <option value="">Select...</option>
-                                {equipmentList.map(e => (
+                            <label className="block text-sm font-medium mb-1.5 text-gray-700 dark:text-gray-300">Equipment (Bow Type)</label>
+                            <select className="w-full p-3 border rounded-lg bg-white dark:bg-slate-800" value={equipmentId} onChange={e => setEquipmentId(e.target.value)}>
+                                <option value="">-- Select Equipment --</option>
+                                {filteredEquipment.map(e => (
                                     <option key={e.equipmentId} value={e.equipmentId}>{e.divisionType}</option>
                                 ))}
                             </select>
+                            {filteredEquipment.length === 0 && <p className="text-xs text-red-500 mt-1">No valid equipment available for this event.</p>}
                         </div>
-                        <button onClick={handleStartScoring} disabled={isLoadingStructure} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mt-4 hover:bg-blue-700 flex justify-center gap-2">
+
+                        <button onClick={handleStartScoring} disabled={isLoadingStructure || !roundId || !equipmentId} className="w-full py-3.5 bg-blue-600 text-white rounded-lg font-bold mt-2 hover:bg-blue-700 flex justify-center gap-2 shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
                             {isLoadingStructure && <Loader2 className="animate-spin" />} Start Scoring
                         </button>
                     </div>
@@ -176,9 +280,11 @@ export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProp
         );
     }
 
+    // (Giữ nguyên phần UI khi đang Scoring ở dưới - không thay đổi)
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
+                {/* ... UI Scoring giữ nguyên ... */}
                 <div className="bg-blue-600 text-white p-4 flex justify-between items-center rounded-t-xl">
                     <div>
                         <h2 className="font-bold text-lg">{roundStructure?.roundName}</h2>

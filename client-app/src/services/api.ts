@@ -24,13 +24,13 @@ export interface RangeDetailDto { sequenceNumber: number; rangeId: number; dista
 export interface RoundStructureDto { roundId: number; roundName: string; ranges: RangeDetailDto[]; }
 export interface Equipment { equipmentId: number; divisionType: string; }
 export interface Round { roundId: number; roundName: string; description?: string; }
-export interface Competition { compId: number; compName: string; startDate: string; endDate: string; location?: string; isClubChampionship: boolean; }
+export interface Competition { compId: number; compName: string; startDate: string; endDate: string; location?: string; isClubChampionship: boolean; details?: string; }
 export interface Score { scoreId: number; archerId: number; roundId: number; compId?: number; dateShot: string; totalScore: number; roundName?: string; competitionName?: string; }
 
 // [FIXED] Cập nhật Interface để khớp với dữ liệu Backend trả về (ArcherController)
-export interface PersonalBest { 
-    scoreId: number; 
-    roundName: string; 
+export interface PersonalBest {
+    scoreId: number;
+    roundName: string;
     totalScore: number;      // Sửa từ bestScore -> totalScore
     dateShot: string;        // Sửa từ dateAchieved -> dateShot
     competitionName?: string;// Sửa từ competitionId -> competitionName
@@ -39,6 +39,16 @@ export interface PersonalBest {
 export interface StagingScore { stagingId: number; archerId: number; roundId: number; equipmentId: number; dateTime: string; rawScore: number; status: string; arrowValues: string; archerName?: string; roundName?: string; equipmentType?: string; }
 export interface ProcessScoreResponse { message: string; scoreId?: number; }
 export interface CreateArcherRequest { firstName: string; lastName: string; email: string; gender: string; dateOfBirth: string; phone?: string; defaultEquipmentId?: number; }
+
+// --- Competition create/update DTO ---
+export interface CreateCompetitionRequest {
+    compName: string;
+    startDate: string;
+    endDate: string;
+    location?: string;
+    isClubChampionship: boolean;
+    details?: string;
+}
 
 // --- System / Dashboard Interfaces ---
 export interface SystemLog {
@@ -66,26 +76,52 @@ export const commonAPI = {
     getEquipment: () => apiCall<Equipment[]>('/Equipment'),
     getCompetitions: () => apiCall<Competition[]>('/Competition'),
     getUpcomingCompetitions: () => apiCall<Competition[]>('/Competition/upcoming'),
-    getRoundStructure: (roundId: number) => apiCall<RoundStructureDto>(`/Round/${roundId}/structure`)
+    getRoundStructure: (roundId: number) => apiCall<RoundStructureDto>(`/Round/${roundId}/structure`),
+
+    // Competition management
+    createCompetition: (data: CreateCompetitionRequest) => apiCall<Competition>('/Competition', { method: 'POST', body: JSON.stringify(data) }),
+    updateCompetition: (id: number, data: CreateCompetitionRequest) => apiCall<Competition>(`/Competition/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteCompetition: (id: number) => apiCall(`/Competition/${id}`, { method: 'DELETE' }),
 };
 
 export const stagingScoreAPI = {
     getPendingScores: (token: string) => apiCall<StagingScore[]>('/StagingScore/pending', { headers: { Authorization: `Bearer ${token}` } }),
-    submitScore: (archerId: number, roundId: number, equipmentId: number, stagedData: StagedRangeInput[], token: string) =>
-        apiCall<StagingScore>('/StagingScore', {
+
+    // submitScore: embed competitionId into metadata JSON to avoid DB model change for now
+    submitScore: (archerId: number, roundId: number, equipmentId: number, stagedData: StagedRangeInput[], token: string, competitionId: number | null) => {
+        const payload: {
+            ArcherId: number;
+            RoundId: number;
+            EquipmentId: number;
+            ScoreData: StagedRangeInput[];
+            Metadata?: { competitionId: number };
+        } = {
+            ArcherId: archerId,
+            RoundId: roundId,
+            EquipmentId: equipmentId,
+            ScoreData: stagedData
+        };
+        if (competitionId != null) {
+            // Put competitionId into a Metadata object so backend can persist it from the payload without changing core models.
+            payload.Metadata = { competitionId };
+        }
+
+        return apiCall<StagingScore>('/StagingScore', {
             method: 'POST',
             headers: { Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ ArcherId: archerId, RoundId: roundId, EquipmentId: equipmentId, ScoreData: stagedData }),
-        }),
+            body: JSON.stringify(payload),
+        });
+    },
+
     approveScore: (id: number, compId?: number, token?: string) => apiCall<ProcessScoreResponse>(`/StagingScore/${id}/approve${compId ? `?competitionId=${compId}` : ''}`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` } }),
     rejectScore: (id: number, reason: string, token?: string) => apiCall<ProcessScoreResponse>(`/StagingScore/${id}/reject`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(reason) }),
 };
 
 export const archerAPI = {
     getScores: (id: string, token: string) => apiCall<Score[]>(`/Archer/${id}/scores`, { headers: { Authorization: `Bearer ${token}` } }),
-    
+
     // [FIXED] Sửa đường dẫn API (Archer thay vì Score) và thêm tham số token
-    getPersonalBests: (id: number | string, token: string) => 
+    getPersonalBests: (id: number | string, token: string) =>
         apiCall<PersonalBest[]>(`/Archer/${id}/personal-bests`, { headers: { Authorization: `Bearer ${token}` } })
 };
 
