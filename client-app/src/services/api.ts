@@ -1,6 +1,6 @@
 // src/services/api.ts
 
-const API_BASE_URL = 'https://localhost:7001/api';
+const API_BASE_URL = 'http://localhost:5280/api';
 
 async function apiCall<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -26,7 +26,16 @@ export interface Equipment { equipmentId: number; divisionType: string; }
 export interface Round { roundId: number; roundName: string; description?: string; }
 export interface Competition { compId: number; compName: string; startDate: string; endDate: string; location?: string; isClubChampionship: boolean; }
 export interface Score { scoreId: number; archerId: number; roundId: number; compId?: number; dateShot: string; totalScore: number; roundName?: string; competitionName?: string; }
-export interface PersonalBest { roundId: number; roundName: string; bestScore: number; dateAchieved: string; competitionId?: number; }
+
+// [FIXED] Cập nhật Interface để khớp với dữ liệu Backend trả về (ArcherController)
+export interface PersonalBest { 
+    scoreId: number; 
+    roundName: string; 
+    totalScore: number;      // Sửa từ bestScore -> totalScore
+    dateShot: string;        // Sửa từ dateAchieved -> dateShot
+    competitionName?: string;// Sửa từ competitionId -> competitionName
+}
+
 export interface StagingScore { stagingId: number; archerId: number; roundId: number; equipmentId: number; dateTime: string; rawScore: number; status: string; arrowValues: string; archerName?: string; roundName?: string; equipmentType?: string; }
 export interface ProcessScoreResponse { message: string; scoreId?: number; }
 export interface CreateArcherRequest { firstName: string; lastName: string; email: string; gender: string; dateOfBirth: string; phone?: string; defaultEquipmentId?: number; }
@@ -55,10 +64,12 @@ export const stagingScoreAPI = {
 
 export const archerAPI = {
     getScores: (id: string, token: string) => apiCall<Score[]>(`/Archer/${id}/scores`, { headers: { Authorization: `Bearer ${token}` } }),
-    getPersonalBests: (id: string) => apiCall<PersonalBest[]>(`/Score/personal-bests/${id}`)
+    
+    // [FIXED] Sửa đường dẫn API (Archer thay vì Score) và thêm tham số token
+    getPersonalBests: (id: number | string, token: string) => 
+        apiCall<PersonalBest[]>(`/Archer/${id}/personal-bests`, { headers: { Authorization: `Bearer ${token}` } })
 };
 
 export const recorderAPI = {
-    // [FIX] Replaced 'any' with 'CreateArcherRequest'
     createArcher: (data: CreateArcherRequest, token: string) => apiCall('/Archer', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(data) })
 };
