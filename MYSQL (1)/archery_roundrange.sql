@@ -16,32 +16,33 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `system_log`
+-- Table structure for table `roundrange`
 --
 
-DROP TABLE IF EXISTS `system_log`;
+DROP TABLE IF EXISTS `roundrange`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `system_log` (
-  `log_id` int NOT NULL AUTO_INCREMENT,
-  `timestamp` datetime(6) NOT NULL,
-  `level` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `user` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `action` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `ip_address` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`log_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `roundrange` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `round_id` int NOT NULL,
+  `range_id` int NOT NULL,
+  `sequence_number` int NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `round_id` (`round_id`),
+  KEY `range_id` (`range_id`),
+  CONSTRAINT `roundrange_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
+  CONSTRAINT `roundrange_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `system_log`
+-- Dumping data for table `roundrange`
 --
 
-LOCK TABLES `system_log` WRITE;
-/*!40000 ALTER TABLE `system_log` DISABLE KEYS */;
-INSERT INTO `system_log` VALUES (1,'2025-11-21 21:14:13.860929','info','Recorder/Admin','Approved Score','Score ID 1002 approved for Archer ID 2. Total: 336','::1'),(2,'2025-11-21 21:14:20.882797','info','Recorder/Admin','Approved Score','Score ID 1003 approved for Archer ID 1. Total: 299','::1'),(3,'2025-11-21 22:22:44.572368','info','Recorder/Admin','Approved Score','Score ID 1004 approved for Archer ID 1. Total: 559','::1');
-/*!40000 ALTER TABLE `system_log` ENABLE KEYS */;
+LOCK TABLES `roundrange` WRITE;
+/*!40000 ALTER TABLE `roundrange` DISABLE KEYS */;
+INSERT INTO `roundrange` VALUES (1,1,1,1),(2,1,2,2),(3,2,3,1),(4,2,3,2),(5,3,4,1);
+/*!40000 ALTER TABLE `roundrange` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -53,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 22:44:28
+-- Dump completed on 2025-11-21 23:39:19
