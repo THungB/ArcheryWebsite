@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ArcheryWebsite.Models;
+using System.Text.Json;
 
 namespace ArcheryWebsite.Controllers
 {
@@ -54,7 +51,7 @@ namespace ArcheryWebsite.Controllers
                     .OrderBy(ss => ss.DateTime)
                     .ToListAsync();
 
-                // Map to DTO to avoid circular references
+                // Map to DTO
                 var responseDtos = pendingScores.Select(ss => new StagingScoreResponseDto
                 {
                     StagingId = ss.StagingId,
@@ -64,6 +61,9 @@ namespace ArcheryWebsite.Controllers
                     DateTime = ss.DateTime,
                     RawScore = ss.RawScore,
                     Status = ss.Status ?? "pending",
+                    // Map ArrowValues để Frontend hiển thị chi tiết
+                    ArrowValues = ss.ArrowValues ?? "[]",
+
                     ArcherName = $"{ss.Archer.FirstName} {ss.Archer.LastName}",
                     RoundName = ss.Round.RoundName,
                     EquipmentType = ss.Equipment.DivisionType
@@ -103,49 +103,33 @@ namespace ArcheryWebsite.Controllers
         }
 
         // POST: api/StagingScore
+        // [FIXED] Đã sửa để nhận ScoreData thay vì Arrows
         [HttpPost]
-        public async Task<ActionResult<StagingScoreResponseDto>> CreateStagingScore(CreateStagingScoreDto dto)
+        public async Task<ActionResult> CreateStagingScore(CreateStagingScoreDto dto)
         {
             try
             {
-                // 1. Validation cơ bản
                 if (dto.ArcherId <= 0 || dto.RoundId <= 0 || dto.EquipmentId <= 0)
                     return BadRequest(new { message = "Invalid IDs provided" });
 
-                if (dto.Arrows == null || dto.Arrows.Length == 0)
-                    return BadRequest(new { message = "Arrow scores are required" });
+                // SỬA LỖI Ở ĐÂY: Kiểm tra ScoreData thay vì Arrows
+                if (dto.ScoreData == null || !dto.ScoreData.Any())
+                    return BadRequest(new { message = "Score data is required" });
 
-                // 2. Tính toán tổng điểm từ mảng mũi tên (Server-side validation)
-                int calculatedTotal = 0;
-                foreach (var arrow in dto.Arrows)
+                // Serialize ScoreData (object phức tạp) thành chuỗi JSON
+                var jsonOptions = new JsonSerializerOptions
                 {
-                    string cleanArrow = arrow.ToUpper().Trim();
-                    if (cleanArrow == "X" || cleanArrow == "10") calculatedTotal += 10;
-                    else if (cleanArrow == "M") calculatedTotal += 0;
-                    else if (int.TryParse(cleanArrow, out int val))
-                    {
-                        if (val < 0 || val > 10) return BadRequest(new { message = $"Invalid arrow value: {val}" });
-                        calculatedTotal += val;
-                    }
-                    else return BadRequest(new { message = $"Invalid arrow format: {arrow}" });
-                }
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                };
+                string jsonArrowValues = JsonSerializer.Serialize(dto.ScoreData, jsonOptions);
 
-                // 3. Kiểm tra tồn tại (giữ nguyên logic cũ)
-                var archer = await _context.Archers.FindAsync(dto.ArcherId);
-                var round = await _context.Rounds.FindAsync(dto.RoundId);
-                var equipment = await _context.Equipment.FindAsync(dto.EquipmentId);
-                
-                if (archer == null || round == null || equipment == null)
-                    return BadRequest(new { message = "Entity not found" });
-
-                // 4. Tạo Staging Score với chi tiết mũi tên
                 var stagingScore = new Stagingscore
                 {
                     ArcherId = dto.ArcherId,
                     RoundId = dto.RoundId,
                     EquipmentId = dto.EquipmentId,
-                    RawScore = calculatedTotal, // Tổng điểm tính bởi server
-                    ArrowValues = System.Text.Json.JsonSerializer.Serialize(dto.Arrows), // Lưu JSON
+                    RawScore = 0, // Điểm thô tạm thời = 0, sẽ tính lại khi Approve
+                    ArrowValues = jsonArrowValues, // Lưu chuỗi JSON đúng định dạng mới
                     Status = "pending",
                     DateTime = DateTime.Now
                 };
@@ -157,13 +141,8 @@ namespace ArcheryWebsite.Controllers
             }
             catch (Exception ex)
             {
-                // [SỬA ĐOẠN NÀY] Lấy lỗi chi tiết từ bên trong (InnerException)
                 var detailedError = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
-                
-                // Log ra console của server (terminal chạy dotnet run) để bạn dễ nhìn thấy
                 Console.WriteLine($"Error creating score: {detailedError}");
-
-                // Trả về lỗi chi tiết cho Frontend
                 return StatusCode(500, new { message = "Error creating score", error = detailedError });
             }
         }
@@ -172,45 +151,86 @@ namespace ArcheryWebsite.Controllers
         [HttpPut("{id}/approve")]
         public async Task<IActionResult> ApproveScore(int id, [FromQuery] int? competitionId)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var stagingScore = await _context.Stagingscores.FindAsync(id);
-                if (stagingScore == null)
-                {
-                    return NotFound(new { message = $"Staging score with ID {id} not found" });
-                }
+                if (stagingScore == null) return NotFound("Staging score not found");
+                if (stagingScore.Status == "approved") return BadRequest("Already approved");
 
-                if (stagingScore.Status == "approved")
-                {
-                    return BadRequest(new { message = "Score already approved" });
-                }
+                // 1. Deserialize JSON Data
+                // JSON structure: List<StagedRangeData>
+                var stagedData = JsonSerializer.Deserialize<List<StagedRangeData>>(stagingScore.ArrowValues ?? "[]");
+                if (stagedData == null || !stagedData.Any())
+                    throw new Exception("Invalid or empty score data.");
 
-                // Create official score
+                int grandTotal = 0;
+
+                // 3. Tạo Score Record
                 var score = new Score
                 {
                     ArcherId = stagingScore.ArcherId,
                     RoundId = stagingScore.RoundId,
                     CompId = competitionId,
                     DateShot = DateOnly.FromDateTime(stagingScore.DateTime),
-                    TotalScore = stagingScore.RawScore
+                    TotalScore = 0 // Sẽ cập nhật sau khi cộng dồn
                 };
-
                 _context.Scores.Add(score);
+                await _context.SaveChangesAsync(); // Để lấy ScoreId
 
-                // Update staging score status
+                // 4. Duyệt qua từng Range (Hiệp)
+                foreach (var rangeData in stagedData)
+                {
+                    for (int i = 0; i < rangeData.Ends.Count; i++)
+                    {
+                        var arrowStrings = rangeData.Ends[i]; // Mảng string ["10", "X", "M"...]
+                        var end = new End
+                        {
+                            ScoreId = score.ScoreId,
+                            RangeId = rangeData.RangeId,
+                            EndNumber = i + 1,
+                            EndScore = 0
+                        };
+                        _context.Ends.Add(end);
+                        await _context.SaveChangesAsync(); // Để lấy EndId
+
+                        int endTotal = 0;
+                        foreach (var valStr in arrowStrings)
+                        {
+                            int point = 0;
+                            string cleanVal = valStr.ToUpper().Trim();
+                            if (cleanVal == "X" || cleanVal == "10") point = 10;
+                            else if (cleanVal == "M") point = 0;
+                            else int.TryParse(cleanVal, out point);
+
+                            endTotal += point;
+
+                            var arrow = new Arrow
+                            {
+                                EndId = end.EndId,
+                                ArrowValue = point
+                            };
+                            _context.Arrows.Add(arrow);
+                        }
+                        end.EndScore = endTotal;
+                        grandTotal += endTotal;
+                    }
+                }
+
+                // 6. Cập nhật tổng điểm cuối cùng cho Score và StagingScore
+                score.TotalScore = grandTotal;
                 stagingScore.Status = "approved";
+                stagingScore.RawScore = grandTotal;
 
                 await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
-                return Ok(new { 
-                    message = "Score approved successfully", 
-                    scoreId = score.ScoreId,
-                    stagingScoreId = stagingScore.StagingId 
-                });
+                return Ok(new { message = "Score approved and processed successfully", scoreId = score.ScoreId });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { message = "Error approving score", error = ex.Message });
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { message = "Error processing approval", error = ex.Message });
             }
         }
 
@@ -229,10 +249,11 @@ namespace ArcheryWebsite.Controllers
                 stagingScore.Status = "rejected";
                 await _context.SaveChangesAsync();
 
-                return Ok(new { 
-                    message = "Score rejected", 
+                return Ok(new
+                {
+                    message = "Score rejected",
                     stagingScoreId = stagingScore.StagingId,
-                    reason 
+                    reason
                 });
             }
             catch (Exception ex)

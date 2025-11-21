@@ -16,33 +16,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `round_equivalence`
+-- Dumping data for table `end`
 --
 
-DROP TABLE IF EXISTS `round_equivalence`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `round_equivalence` (
-  `equivalence_id` int NOT NULL AUTO_INCREMENT,
-  `round_id` int NOT NULL,
-  `equivalent_round_id` int NOT NULL,
-  `valid_from` date NOT NULL DEFAULT '2000-01-01',
-  `valid_to` date DEFAULT NULL,
-  PRIMARY KEY (`equivalence_id`),
-  KEY `FK_RoundEquivalence_Round_Source` (`round_id`),
-  KEY `FK_RoundEquivalence_Round_Target` (`equivalent_round_id`),
-  CONSTRAINT `FK_RoundEquivalence_Round_Source` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE,
-  CONSTRAINT `FK_RoundEquivalence_Round_Target` FOREIGN KEY (`equivalent_round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `round_equivalence`
---
-
-LOCK TABLES `round_equivalence` WRITE;
-/*!40000 ALTER TABLE `round_equivalence` DISABLE KEYS */;
-/*!40000 ALTER TABLE `round_equivalence` ENABLE KEYS */;
+LOCK TABLES `end` WRITE;
+/*!40000 ALTER TABLE `end` DISABLE KEYS */;
+INSERT INTO `end` VALUES (1,4,7,1,60),(2,4,7,2,60),(3,4,7,3,60),(4,4,7,4,60),(5,4,7,5,60),(6,4,7,6,60),(7,4,7,1,60),(8,4,7,2,60),(9,4,7,3,60),(10,4,7,4,60),(11,4,7,5,60),(12,4,7,6,60);
+/*!40000 ALTER TABLE `end` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +34,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 18:23:10
+-- Dump completed on 2025-11-21 11:33:00

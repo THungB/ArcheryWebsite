@@ -16,27 +16,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `equipment`
+-- Dumping data for table `range`
 --
 
-DROP TABLE IF EXISTS `equipment`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `equipment` (
-  `equipment_id` int NOT NULL AUTO_INCREMENT,
-  `division_type` enum('Recurve','Compound','Recurve Barebow','Compound Barebow','Longbow') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`equipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `equipment`
---
-
-LOCK TABLES `equipment` WRITE;
-/*!40000 ALTER TABLE `equipment` DISABLE KEYS */;
-INSERT INTO `equipment` VALUES (1,'Recurve'),(2,'Compound'),(3,'Recurve Barebow'),(4,'Compound Barebow'),(5,'Longbow');
-/*!40000 ALTER TABLE `equipment` ENABLE KEYS */;
+LOCK TABLES `range` WRITE;
+/*!40000 ALTER TABLE `range` DISABLE KEYS */;
+INSERT INTO `range` VALUES (1,18,10,122),(2,20,6,122),(3,30,6,122),(4,40,6,122),(5,50,6,122),(6,60,6,122),(7,70,6,122),(8,90,6,122);
+/*!40000 ALTER TABLE `range` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -48,4 +34,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 18:23:11
+-- Dump completed on 2025-11-21 11:33:00

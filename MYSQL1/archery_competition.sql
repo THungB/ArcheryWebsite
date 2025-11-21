@@ -16,33 +16,13 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `end`
+-- Dumping data for table `competition`
 --
 
-DROP TABLE IF EXISTS `end`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `end` (
-  `end_id` int NOT NULL AUTO_INCREMENT,
-  `score_id` int NOT NULL,
-  `range_id` int NOT NULL,
-  `end_number` int NOT NULL,
-  `end_score` int NOT NULL,
-  PRIMARY KEY (`end_id`),
-  KEY `score_id` (`score_id`),
-  KEY `range_id` (`range_id`),
-  CONSTRAINT `end_ibfk_1` FOREIGN KEY (`score_id`) REFERENCES `score` (`score_id`),
-  CONSTRAINT `end_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `end`
---
-
-LOCK TABLES `end` WRITE;
-/*!40000 ALTER TABLE `end` DISABLE KEYS */;
-/*!40000 ALTER TABLE `end` ENABLE KEYS */;
+LOCK TABLES `competition` WRITE;
+/*!40000 ALTER TABLE `competition` DISABLE KEYS */;
+INSERT INTO `competition` VALUES (1,'Sydney Olympic Park Open','2024-04-21','2024-04-21',0),(2,'Archery NSW State Championships','2024-05-10','2024-05-12',0),(3,'National Indoor Series Qualifier','2024-06-01','2024-06-01',0);
+/*!40000 ALTER TABLE `competition` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +34,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-20 18:23:10
+-- Dump completed on 2025-11-21 11:33:01

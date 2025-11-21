@@ -1,6 +1,30 @@
-import { useState, useEffect, useRef } from 'react';
-import { X, Check, Calculator, Loader2, Target } from 'lucide-react'; // Đã thêm Target
+import { useState, useEffect } from 'react';
+import { X, ChevronRight, ChevronLeft } from 'lucide-react'; // Đã bỏ Check, Target
 import { stagingScoreAPI, commonAPI, Round, Competition } from '../services/api';
+
+// Interface cho cấu trúc vòng đấu (nhận từ API)
+interface RangeStructure {
+    sequenceNumber: number;
+    rangeId: number;
+    distanceMeters: number;
+    endCount: number;
+    arrowsPerEnd: number;
+}
+
+interface RoundStructure {
+    roundId: number;
+    roundName: string;
+    ranges: RangeStructure[];
+}
+
+// Interface cho dữ liệu gửi đi (Payload)
+interface StagedRangeInput {
+    rangeId: number;
+    ends: string[][];
+}
+
+// Dữ liệu lưu trữ điểm số: [RangeIndex][EndIndex][ArrowIndex]
+type ScoreState = string[][][];
 
 interface ScoreEntryProps {
     userId: string;
@@ -9,258 +33,243 @@ interface ScoreEntryProps {
 }
 
 export default function ScoreEntry({ userId, onClose, onSubmit }: ScoreEntryProps) {
-    // State
-    const [competition, setCompetition] = useState('');
-    const [round, setRound] = useState('');
-    const [equipment, setEquipment] = useState('');
+    const [competitionId, setCompetitionId] = useState('');
+    const [roundId, setRoundId] = useState('');
+    const [equipmentId, setEquipmentId] = useState('');
 
-    // 6 ô input cho 6 mũi tên
-    const [arrows, setArrows] = useState<string[]>(['', '', '', '', '', '']);
+    const [step, setStep] = useState<'setup' | 'scoring'>('setup');
+    const [roundStructure, setRoundStructure] = useState<RoundStructure | null>(null);
 
-    // Ref để điều khiển focus chuyển ô khi nhấn Enter
-    const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+    const [currentRangeIdx, setCurrentRangeIdx] = useState(0);
+    const [currentEndIdx, setCurrentEndIdx] = useState(0);
 
-    // Data loading state
-    const [activeRounds, setActiveRounds] = useState<Round[]>([]);
+    const [scores, setScores] = useState<ScoreState>([]);
+
+    const [roundsList, setRoundsList] = useState<Round[]>([]);
     const [competitionsList, setCompetitionsList] = useState<Competition[]>([]);
-    const [isLoadingData, setIsLoadingData] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState('');
 
-    // Load data
     useEffect(() => {
-        const fetchData = async () => {
+        const loadData = async () => {
             try {
-                const [roundsData, competitionsData] = await Promise.all([
-                    commonAPI.getRounds(),
-                    commonAPI.getCompetitions()
-                ]);
-                setActiveRounds(roundsData);
-                setCompetitionsList(competitionsData);
-            } catch (err) {
-                console.error(err);
-                setError("Failed to load data.");
-            } finally {
-                setIsLoadingData(false);
+                const [r, c] = await Promise.all([commonAPI.getRounds(), commonAPI.getCompetitions()]);
+                setRoundsList(r);
+                setCompetitionsList(c);
+            } catch (error) {
+                console.error("Failed to load initial data", error);
             }
         };
-        fetchData();
+        loadData();
     }, []);
 
-    // Xử lý thay đổi giá trị input
-    const handleArrowChange = (index: number, value: string) => {
-        // Chỉ cho phép nhập số, X, M (không phân biệt hoa thường)
-        const cleanValue = value.toUpperCase();
+    const handleStartScoring = async () => {
+        if (!competitionId || !roundId || !equipmentId) return alert("Please fill all fields");
 
-        // Validate: Chỉ cho phép 1-2 ký tự, là số hoặc X, M
-        if (cleanValue === '' || /^(10|[0-9]|X|M)$/.test(cleanValue)) {
-            const newArrows = [...arrows];
-            newArrows[index] = cleanValue;
-            setArrows(newArrows);
+        // MOCK DATA - Thay bằng API thực tế khi backend sẵn sàng: await commonAPI.getRoundStructure(roundId)
+        const structure: RoundStructure = {
+            roundId: parseInt(roundId),
+            roundName: "WA 720",
+            ranges: [
+                { sequenceNumber: 1, rangeId: 7, distanceMeters: 70, endCount: 6, arrowsPerEnd: 6 },
+                { sequenceNumber: 2, rangeId: 7, distanceMeters: 70, endCount: 6, arrowsPerEnd: 6 }
+            ]
+        };
 
-            // UX: Nếu nhập X, M hoặc 10 -> Tự động nhảy sang ô tiếp theo
-            if ((cleanValue === 'X' || cleanValue === 'M' || cleanValue === '10') && index < 5) {
-                inputRefs.current[index + 1]?.focus();
-            }
+        setRoundStructure(structure);
+
+        const initialScores = structure.ranges.map(range =>
+            Array(range.endCount).fill(null).map(() =>
+                Array(range.arrowsPerEnd).fill('')
+            )
+        );
+
+        setScores(initialScores);
+        setStep('scoring');
+    };
+
+    const handleArrowChange = (arrowIdx: number, value: string) => {
+        const cleanVal = value.toUpperCase();
+        if (!/^(10|[0-9]|X|M)?$/.test(cleanVal)) return;
+
+        setScores(prevScores => {
+            const newScores = [...prevScores];
+            // Deep copy mảng con để đảm bảo tính bất biến (immutability)
+            newScores[currentRangeIdx] = [...prevScores[currentRangeIdx]];
+            newScores[currentRangeIdx][currentEndIdx] = [...prevScores[currentRangeIdx][currentEndIdx]];
+
+            newScores[currentRangeIdx][currentEndIdx][arrowIdx] = cleanVal;
+            return newScores;
+        });
+    };
+
+    const currentRange = roundStructure?.ranges[currentRangeIdx];
+    const currentArrows = scores[currentRangeIdx]?.[currentEndIdx] || [];
+    const isEndComplete = currentArrows.every(a => a !== '');
+
+    const handleNext = () => {
+        if (!currentRange || !roundStructure) return;
+        if (!isEndComplete) return alert("Please enter all arrows for this end.");
+
+        if (currentEndIdx < (currentRange.endCount - 1)) {
+            setCurrentEndIdx((prev) => prev + 1);
+        } else if (currentRangeIdx < (roundStructure.ranges.length - 1)) {
+            setCurrentRangeIdx((prev) => prev + 1);
+            setCurrentEndIdx(0);
+        } else {
+            submitFinalScore();
         }
     };
 
-    // Xử lý phím Enter để nhảy ô
-    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            if (index < 5) {
-                inputRefs.current[index + 1]?.focus();
-            }
-        }
-        // Xử lý nút Backspace khi ô trống -> lùi lại ô trước
-        if (e.key === 'Backspace' && arrows[index] === '' && index > 0) {
-            inputRefs.current[index - 1]?.focus();
+    const handleBack = () => {
+        if (!roundStructure) return;
+
+        if (currentEndIdx > 0) {
+            setCurrentEndIdx((prev) => prev - 1);
+        } else if (currentRangeIdx > 0) {
+            setCurrentRangeIdx((prev) => prev - 1);
+            setCurrentEndIdx(roundStructure.ranges[currentRangeIdx - 1].endCount - 1);
+        } else {
+            setStep('setup');
         }
     };
 
-    // Tính tổng điểm
-    const calculateTotal = () => {
-        return arrows.reduce((sum, val) => {
-            if (val === 'X') return sum + 10; // X tính là 10
-            if (val === 'M' || val === '') return sum; // M tính là 0
-            return sum + parseInt(val, 10);
-        }, 0);
-    };
-
-    const handleSubmit = async () => {
-        setError('');
+    const submitFinalScore = async () => {
+        if (!roundStructure) return;
         setIsSubmitting(true);
         try {
-            if (!competition || !round || !equipment) throw new Error('Please fill all required fields (*)');
-            if (arrows.some(a => a === '')) throw new Error('Please enter scores for all 6 arrows');
+            const token = localStorage.getItem('authToken') || '';
 
-            const token = localStorage.getItem('authToken') || 'dummy-token';
+            // Map dữ liệu sang đúng kiểu Interface StagedRangeInput
+            const payloadData: StagedRangeInput[] = roundStructure.ranges.map((range, idx) => ({
+                rangeId: range.rangeId,
+                ends: scores[idx]
+            }));
 
             await stagingScoreAPI.submitScore(
-                parseInt(userId) || 1,
-                parseInt(round),
-                parseInt(equipment),
-                arrows, // Gửi mảng chi tiết ["9", "10", "X"...]
+                parseInt(userId),
+                parseInt(roundId),
+                parseInt(equipmentId),
+                payloadData,
                 token
             );
 
             onSubmit();
             onClose();
-        } catch (err: unknown) {
-            const msg = err instanceof Error ? err.message : 'Failed to submit';
-            setError(msg);
+        } catch (err) {
+            console.error(err);
+            alert("Failed to submit score");
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    return (
-        // Modal Overlay
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-
-            {/* Card Container - Giống hệt hình ảnh */}
-            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-
-                {/* Header Xanh Dương */}
-                <div className="bg-blue-600 px-6 py-4 text-white flex justify-between items-center shrink-0">
-                    <div className="flex items-center gap-3">
-                        <div className="p-1.5 bg-white/20 rounded-full">
-                            <Target className="w-6 h-6" />
-                        </div>
-                        <h2 className="text-xl font-bold">Submit Score</h2>
+    if (step === 'setup') {
+        return (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+                <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-xl p-6">
+                    <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-bold">New Scorecard</h2>
+                        <button onClick={onClose}><X className="w-6 h-6" /></button>
                     </div>
-                    <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
-                        <X className="w-6 h-6" />
-                    </button>
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Competition</label>
+                            <select className="w-full p-2 border rounded-lg bg-transparent"
+                                value={competitionId} onChange={e => setCompetitionId(e.target.value)}>
+                                <option value="">Select...</option>
+                                {competitionsList.map(c => <option key={c.compId} value={c.compId}>{c.compName}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Round</label>
+                            <select className="w-full p-2 border rounded-lg bg-transparent"
+                                value={roundId} onChange={e => setRoundId(e.target.value)}>
+                                <option value="">Select...</option>
+                                {roundsList.map(r => <option key={r.roundId} value={r.roundId}>{r.roundName}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Equipment</label>
+                            <select className="w-full p-2 border rounded-lg bg-transparent"
+                                value={equipmentId} onChange={e => setEquipmentId(e.target.value)}>
+                                <option value="">Select...</option>
+                                <option value="1">Recurve</option>
+                                <option value="2">Compound</option>
+                                <option value="3">Barebow</option>
+                            </select>
+                        </div>
+                        <button onClick={handleStartScoring} className="w-full py-3 bg-blue-600 text-white rounded-lg font-bold mt-4 hover:bg-blue-700 transition">
+                            Start Scoring
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
+                <div className="bg-blue-600 text-white p-4 flex justify-between items-center rounded-t-xl">
+                    <div>
+                        <h2 className="font-bold text-lg">{roundStructure?.roundName}</h2>
+                        <p className="text-sm text-blue-100">
+                            Distance: {currentRange?.distanceMeters}m | End {currentEndIdx + 1} / {currentRange?.endCount}
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-2xl font-bold">
+                            {scores.flat(2).reduce((sum, v) => {
+                                if (v === 'X' || v === '10') return sum + 10;
+                                if (v === 'M' || v === '') return sum;
+                                return sum + parseInt(v);
+                            }, 0)}
+                        </div>
+                        <span className="text-xs opacity-80">TOTAL</span>
+                    </div>
                 </div>
 
-                {/* Body */}
-                <div className="p-6 overflow-y-auto">
-                    {isLoadingData ? (
-                        <div className="py-10 text-center text-gray-500 flex flex-col items-center">
-                            <Loader2 className="w-8 h-8 animate-spin text-blue-600 mb-2" />
-                            <p>Loading details...</p>
+                <div className="p-8 flex-1 overflow-y-auto">
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-4 mb-8">
+                        {currentArrows.map((val, idx) => (
+                            <div key={idx} className="flex flex-col items-center gap-2">
+                                <span className="text-xs text-gray-500 font-medium">Arrow {idx + 1}</span>
+                                <input
+                                    type="text"
+                                    value={val}
+                                    onChange={(e) => handleArrowChange(idx, e.target.value)}
+                                    className={`w-full aspect-square text-center text-2xl font-bold border-2 rounded-xl focus:ring-4 focus:ring-blue-200 outline-none transition-all
+                                        ${val === '10' || val === 'X' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' :
+                                            val === 'M' ? 'bg-gray-100 border-gray-300 text-gray-400' :
+                                                'border-gray-200 dark:border-gray-700 dark:bg-slate-800'}
+                                    `}
+                                    placeholder="-"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-4 dark:bg-gray-700">
+                        <div className="bg-blue-600 h-2.5 rounded-full transition-all duration-300"
+                            style={{ width: `${((currentRangeIdx * (currentRange?.endCount || 0) + currentEndIdx + 1) / ((roundStructure?.ranges.length || 1) * (currentRange?.endCount || 1))) * 100}%` }}>
                         </div>
-                    ) : (
-                        <div className="space-y-6">
-
-                            {/* Row 1: Competition & Round */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                        Competition <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={competition}
-                                        onChange={e => setCompetition(e.target.value)}
-                                        className="w-full h-11 px-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                    >
-                                        <option value="">Select competition</option>
-                                        {competitionsList.map(c => (
-                                            <option key={c.compId} value={c.compId}>{c.compName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className="space-y-1.5">
-                                    <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                        Round Type <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={round}
-                                        onChange={e => setRound(e.target.value)}
-                                        className="w-full h-11 px-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                    >
-                                        <option value="">Select round</option>
-                                        {activeRounds.map(r => (
-                                            <option key={r.roundId} value={r.roundId}>{r.roundName}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Row 2: Equipment */}
-                            <div className="space-y-1.5">
-                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    Equipment <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={equipment}
-                                    onChange={e => setEquipment(e.target.value)}
-                                    className="w-full h-11 px-3 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                                >
-                                    <option value="">Select equipment type</option>
-                                    <option value="1">Recurve</option>
-                                    <option value="2">Compound</option>
-                                    <option value="3">Barebow</option>
-                                </select>
-                            </div>
-
-                            {/* Row 3: Score Inputs */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                                    End Scores (Inputs: 0-10, X, M)
-                                </label>
-                                <div className="grid grid-cols-6 gap-3">
-                                    {arrows.map((val, idx) => (
-                                        <input
-                                            key={idx}
-                                            ref={(el) => { inputRefs.current[idx] = el; }}
-                                            type="text"
-                                            value={val}
-                                            onChange={e => handleArrowChange(idx, e.target.value)}
-                                            onKeyDown={e => handleKeyDown(idx, e)}
-                                            placeholder="-"
-                                            className={`
-                                                h-12 sm:h-14 w-full text-center rounded-lg border text-xl font-bold outline-none transition-all
-                                                focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                                                ${val === 'X' || val === '10' ? 'text-yellow-600 bg-yellow-50 border-yellow-200' : ''}
-                                                ${val === 'M' ? 'text-gray-400 bg-gray-50' : ''}
-                                                ${!val && 'bg-white dark:bg-slate-800 border-gray-300 dark:border-gray-600'}
-                                            `}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Total Score Display */}
-                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 rounded-lg p-4 flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    <div className="bg-blue-100 dark:bg-blue-800 p-2 rounded-md">
-                                        <Calculator className="w-5 h-5 text-blue-600 dark:text-blue-300" />
-                                    </div>
-                                    <span className="font-semibold text-gray-700 dark:text-gray-200">Total Score</span>
-                                </div>
-                                <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                                    {calculateTotal()}
-                                </span>
-                            </div>
-
-                            {/* Error Message */}
-                            {error && (
-                                <div className="text-red-500 text-sm text-center bg-red-50 dark:bg-red-900/20 p-2 rounded-md">
-                                    {error}
-                                </div>
-                            )}
-                        </div>
-                    )}
+                    </div>
+                    <p className="text-center text-sm text-gray-500">
+                        Range {currentRangeIdx + 1} of {roundStructure?.ranges.length}
+                    </p>
                 </div>
 
-                {/* Footer / Actions */}
-                <div className="p-6 border-t border-gray-100 dark:border-gray-700 flex gap-3 bg-gray-50/50 dark:bg-slate-800/50">
-                    <button
-                        onClick={onClose}
-                        className="flex-1 h-11 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                        Cancel
+                <div className="p-4 border-t border-gray-100 dark:border-gray-700 flex justify-between bg-gray-50 dark:bg-slate-800 rounded-b-xl">
+                    <button onClick={handleBack} className="px-6 py-3 flex items-center gap-2 font-medium text-gray-600 hover:bg-gray-200 rounded-lg transition">
+                        <ChevronLeft className="w-5 h-5" /> Back
                     </button>
-                    <button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className="flex-1 h-11 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-lg shadow-blue-200 dark:shadow-none flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:shadow-none"
-                    >
-                        {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Check className="w-5 h-5" /> Submit Score</>}
+                    <button onClick={handleNext} disabled={!isEndComplete || isSubmitting}
+                        className={`px-8 py-3 flex items-center gap-2 font-bold text-white rounded-lg transition shadow-lg
+                            ${isEndComplete ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/30' : 'bg-gray-300 cursor-not-allowed dark:bg-slate-600'}
+                        `}>
+                        {isSubmitting ? 'Submitting...' :
+                            (roundStructure && currentRangeIdx === roundStructure.ranges.length - 1 && currentEndIdx === currentRange!.endCount - 1)
+                                ? 'Finish & Submit' : 'Next End'}
+                        {!isSubmitting && <ChevronRight className="w-5 h-5" />}
                     </button>
                 </div>
             </div>

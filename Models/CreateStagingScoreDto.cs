@@ -10,4 +10,5 @@ public class CreateStagingScoreDto
     public int RoundId { get; set; }
     public int EquipmentId { get; set; }
     public string[] Arrows { get; set; } = Array.Empty<string>();
+    public List<StagedRangeData>? ScoreData { get; set; }
 }

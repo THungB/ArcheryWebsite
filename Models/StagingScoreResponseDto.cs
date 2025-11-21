@@ -13,8 +13,7 @@ public class StagingScoreResponseDto
     public DateTime DateTime { get; set; }
     public int RawScore { get; set; }
     public string Status { get; set; }
-    
-    // Optional: Include only basic archer info if needed
+    public string ArrowValues { get; set; } = "[]";
     public string? ArcherName { get; set; }
     public string? RoundName { get; set; }
     public string? EquipmentType { get; set; }

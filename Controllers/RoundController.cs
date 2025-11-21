@@ -203,5 +203,35 @@ namespace ArcheryWebsite.Controllers
         {
             return _context.Rounds.Any(e => e.RoundId == id);
         }
+    
+    // GET: api/Round/5/structure
+[HttpGet("{id}/structure")]
+        public async Task<ActionResult<RoundStructureDto>> GetRoundStructure(int id)
+        {
+            var round = await _context.Rounds.FindAsync(id);
+            if (round == null) return NotFound("Round not found");
+
+            var roundRanges = await _context.Roundranges
+                .Where(rr => rr.RoundId == id)
+                .Include(rr => rr.Range)
+                .OrderBy(rr => rr.SequenceNumber)
+                .ToListAsync();
+
+            var dto = new RoundStructureDto
+            {
+                RoundId = round.RoundId,
+                RoundName = round.RoundName,
+                Ranges = roundRanges.Select(rr => new RangeDetailDto
+                {
+                    SequenceNumber = rr.SequenceNumber,
+                    RangeId = rr.RangeId,
+                    DistanceMeters = rr.Range.DistanceMeters,
+                    EndCount = rr.Range.EndCount,
+                    ArrowsPerEnd = 6
+                }).ToList()
+            };
+
+            return Ok(dto);
+        }
     }
-}
+    }
