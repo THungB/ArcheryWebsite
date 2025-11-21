@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ArcheryWebsite.Models;
+using ArcheryWebsite.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<ArcheryDataService>();
 
 // Add MySQL DbContext
 builder.Services.AddDbContext<ArcheryDbContext>(options =>

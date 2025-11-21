@@ -10,7 +10,7 @@ import { MyScores } from './MyScores';
 import { NotificationsPanel } from './NotificationsPanel';
 import { PageLayout, Header, MainContent, CardGrid } from './layout/PageLayout';
 import { StatCard } from './ui/stat-card';
-
+import { AICoach } from './AICoach'; 
 interface ArcherDashboardProps {
   userId: string;
   onLogout: () => void;
@@ -104,7 +104,8 @@ export function ArcherDashboard({ userId, onLogout }: ArcherDashboardProps) {
             // Refresh scores
           }}
         />
-      )}
+          )}
+          <AICoach userId={userId} />
     </PageLayout>
   );
 }
