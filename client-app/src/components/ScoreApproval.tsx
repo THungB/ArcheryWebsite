@@ -1,32 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
-import { CheckCircle, XCircle, Eye, AlertTriangle, Loader2, User, Target, Award, ChevronDown, ChevronUp, Clock } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, AlertTriangle, Loader2, User, Target, Award, ChevronDown, ChevronUp, Clock, History, FileText } from 'lucide-react';
 import { stagingScoreAPI, StagingScore, StagedRangeInput } from '../services/api';
-import { toast } from 'sonner'; // [NEW] Sử dụng Sonner Toast
+import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Badge } from './ui/badge';
 
 export function ScoreApproval() {
     const [pendingScores, setPendingScores] = useState<StagingScore[]>([]);
+    const [historyScores, setHistoryScores] = useState<StagingScore[]>([]);
     const [selectedScore, setSelectedScore] = useState<StagingScore | null>(null);
     const [rejectionReason, setRejectionReason] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-
+    const [isHistoryView, setIsHistoryView] = useState(false);
     const [expandedRanges, setExpandedRanges] = useState<number[]>([0, 1]);
 
     useEffect(() => {
-        loadPendingScores();
+        loadData();
     }, []);
 
-    const loadPendingScores = async () => {
+    const loadData = async () => {
         setLoading(true);
         setError('');
         try {
             const token = localStorage.getItem('authToken') || 'dummy-token';
-            const scores = await stagingScoreAPI.getPendingScores(token);
-            setPendingScores(scores);
+            const [pending, all] = await Promise.all([
+                stagingScoreAPI.getPendingScores(token),
+                stagingScoreAPI.getAllStagingScores(token)
+            ]);
+
+            setPendingScores(pending || []);
+
+            const processed = (all || []).filter((s: StagingScore) => s.status !== 'pending');
+            setHistoryScores(processed.sort((a: StagingScore, b: StagingScore) =>
+                new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime()
+            ));
+
         } catch (err: unknown) {
-            console.error('Error loading pending scores:', err);
-            setError('Failed to load pending scores. Please try again.');
+            console.error('Error loading scores:', err);
+            setError('Failed to load score data. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -35,18 +48,12 @@ export function ScoreApproval() {
     const handleApprove = async () => {
         if (!selectedScore) return;
         setIsProcessing(true);
-        const approveTime = new Date().toLocaleTimeString(); // [NEW] Capture time
+        const approveTime = new Date().toLocaleTimeString();
 
         try {
             const token = localStorage.getItem('authToken') || 'dummy-token';
-            
-            // [LOGIC] Nếu trong StagingScore (hoặc JSON của nó) có competitionId, 
-            // chúng ta nên extract nó ra để pass vào hàm approve.
-            // Hiện tại giả định competitionId được xử lý ở backend hoặc chọn thủ công nếu cần.
-            
             await stagingScoreAPI.approveScore(selectedScore.stagingId, undefined, token);
-            
-            // [NEW] Toast Notification với chi tiết thời gian
+
             toast.success(
                 <div className="flex flex-col gap-1">
                     <span className="font-bold">Score Approved Successfully!</span>
@@ -57,13 +64,16 @@ export function ScoreApproval() {
                 </div>
             );
 
+            // Refresh lists locally
+            const updatedScore = { ...selectedScore, status: 'approved' };
             setPendingScores(prev => prev.filter(s => s.stagingId !== selectedScore.stagingId));
+            setHistoryScores(prev => [updatedScore, ...prev]);
+
             setSelectedScore(null);
             setRejectionReason('');
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Unknown error';
             toast.error(`Approval Failed: ${errorMessage}`);
-            console.error('Error approving score:', err);
         } finally {
             setIsProcessing(false);
         }
@@ -77,32 +87,30 @@ export function ScoreApproval() {
         try {
             const token = localStorage.getItem('authToken') || 'dummy-token';
             await stagingScoreAPI.rejectScore(selectedScore.stagingId, rejectionReason, token);
-            
-            // [NEW] Toast Notification
+
             toast.success(
                 <div className="flex flex-col gap-1">
                     <span className="font-bold text-red-600">Score Rejected</span>
                     <span className="text-xs text-gray-500">Reason: {rejectionReason}</span>
                     <span className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3" /> Time: {rejectTime}</span>
-                    <span className="text-xs">Archer ID: {selectedScore.archerId}</span>
                 </div>
             );
 
+            // Refresh lists locally
+            const updatedScore = { ...selectedScore, status: 'rejected' };
             setPendingScores(prev => prev.filter(s => s.stagingId !== selectedScore.stagingId));
+            setHistoryScores(prev => [updatedScore, ...prev]);
+
             setSelectedScore(null);
             setRejectionReason('');
         } catch (err: unknown) {
             const errorMessage = err instanceof Error ? err.message : 'Unknown error';
             toast.error(`Reject Failed: ${errorMessage}`);
-            console.error('Error rejecting score:', err);
         } finally {
             setIsProcessing(false);
         }
     };
 
-    // --- Helper Logic: Parse & Calculate Score ---
-
-    // Parse chuỗi JSON arrowValues thành object
     const parsedDetails: StagedRangeInput[] = useMemo(() => {
         if (!selectedScore?.arrowValues) return [];
         try {
@@ -114,10 +122,8 @@ export function ScoreApproval() {
         }
     }, [selectedScore]);
 
-    // Tính tổng điểm thực tế từ chi tiết mũi tên
     const calculatedTotal = useMemo(() => {
         let total = 0;
-        // Kiểm tra an toàn để tránh crash nếu dữ liệu null
         if (!parsedDetails || !Array.isArray(parsedDetails)) return 0;
 
         parsedDetails.forEach(range => {
@@ -143,12 +149,10 @@ export function ScoreApproval() {
         );
     };
 
-    // Helper lấy tên hiển thị an toàn (ưu tiên dữ liệu phẳng từ DTO mới)
     const getArcherName = (s: StagingScore) => s.archerName || `ID: ${s.archerId}`;
     const getRoundName = (s: StagingScore) => s.roundName || `Round #${s.roundId}`;
     const getEquipmentName = (s: StagingScore) => s.equipmentType || `Equip #${s.equipmentId}`;
 
-    // Helper render timestamp nhận được
     const renderSubmittedTime = (dateString: string) => {
         const date = new Date(dateString);
         return (
@@ -161,12 +165,18 @@ export function ScoreApproval() {
         );
     };
 
+    const renderStatusBadge = (status: string) => {
+        if (status === 'approved') return <Badge className="bg-green-100 text-green-700 border-green-200">Approved</Badge>;
+        if (status === 'rejected') return <Badge className="bg-red-100 text-red-700 border-red-200">Rejected</Badge>;
+        return <Badge variant="outline">{status}</Badge>;
+    };
+
     if (loading) {
         return (
             <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6">
                 <div className="flex items-center justify-center py-12 gap-2 text-gray-500">
                     <Loader2 className="w-6 h-6 animate-spin" />
-                    <span>Loading pending scores...</span>
+                    <span>Loading scores...</span>
                 </div>
             </div>
         );
@@ -175,66 +185,106 @@ export function ScoreApproval() {
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 p-4">
             <div className="max-w-7xl mx-auto">
-                <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white p-6">
-                        <h2 className="text-2xl font-bold mb-2">Pending Score Approvals</h2>
-                        <p className="text-blue-100">Review and approve archer scores submitted for approval</p>
+
+                {error && (
+                    <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
+                            <button onClick={loadData} className="mt-2 text-sm text-red-600 dark:text-red-400 underline hover:no-underline">Try again</button>
+                        </div>
+                    </div>
+                )}
+
+                <Tabs defaultValue="pending" onValueChange={(val) => setIsHistoryView(val === 'history')}>
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Score Management</h2>
+                        <TabsList>
+                            <TabsTrigger value="pending" className="flex gap-2">
+                                <FileText className="w-4 h-4" /> Pending <Badge variant="secondary" className="ml-1">{pendingScores.length}</Badge>
+                            </TabsTrigger>
+                            <TabsTrigger value="history" className="flex gap-2">
+                                <History className="w-4 h-4" /> History
+                            </TabsTrigger>
+                        </TabsList>
                     </div>
 
-                    <div className="p-6">
-                        {error && (
-                            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-3">
-                                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-red-800 dark:text-red-200">{error}</p>
-                                    <button onClick={loadPendingScores} className="mt-2 text-sm text-red-600 dark:text-red-400 underline hover:no-underline">Try again</button>
+                    <TabsContent value="pending">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-lg overflow-hidden">
+                            {pendingScores.length === 0 ? (
+                                <div className="text-center py-16 text-gray-500">
+                                    <CheckCircle className="w-16 h-16 mx-auto mb-4 opacity-20" />
+                                    <p className="text-lg font-medium">No pending scores</p>
+                                    <p className="text-sm mt-2">All caught up!</p>
                                 </div>
-                            </div>
-                        )}
+                            ) : (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 dark:bg-slate-800">
+                                            <tr>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archer</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
+                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
+                                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-800">
+                                            {pendingScores.map((score) => (
+                                                <tr key={score.stagingId} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                                                                <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium text-gray-900 dark:text-gray-100">{getArcherName(score)}</div>
+                                                                <div className="text-sm text-gray-500">ID: {score.archerId}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getRoundName(score)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getEquipmentName(score)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">{renderSubmittedTime(score.dateTime)}</td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                                                        <button onClick={() => setSelectedScore(score)} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                                                            <Eye className="w-4 h-4" /> Review
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </TabsContent>
 
-                        {pendingScores.length === 0 ? (
-                            <div className="text-center py-16 text-gray-500">
-                                <CheckCircle className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                                <p className="text-lg font-medium">No pending scores</p>
-                                <p className="text-sm mt-2">All caught up!</p>
-                            </div>
-                        ) : (
+                    <TabsContent value="history">
+                        <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm overflow-hidden border border-slate-200 dark:border-slate-700">
                             <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 dark:bg-slate-800">
+                                <table className="w-full text-sm text-left">
+                                    <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase font-medium">
                                         <tr>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Archer</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Round</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Equipment</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Submitted</th>
-                                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                            <th className="px-6 py-3">Archer</th>
+                                            <th className="px-6 py-3">Round</th>
+                                            <th className="px-6 py-3">Score</th>
+                                            <th className="px-6 py-3">Date</th>
+                                            <th className="px-6 py-3">Status</th>
+                                            <th className="px-6 py-3 text-right">View</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white dark:bg-slate-900 divide-y divide-gray-200 dark:divide-gray-800">
-                                        {pendingScores.map((score) => (
-                                            <tr key={score.stagingId} className="hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                                                            <User className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium text-gray-900 dark:text-gray-100">
-                                                                {getArcherName(score)}
-                                                            </div>
-                                                            <div className="text-sm text-gray-500">ID: {score.archerId}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getRoundName(score)}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-gray-100">{getEquipmentName(score)}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
-                                                    {renderSubmittedTime(score.dateTime)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-right">
-                                                    <button onClick={() => setSelectedScore(score)} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                                                        <Eye className="w-4 h-4" /> Review
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {historyScores.map(score => (
+                                            <tr key={score.stagingId} className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                                <td className="px-6 py-4 font-medium">{getArcherName(score)}</td>
+                                                <td className="px-6 py-4">{getRoundName(score)}</td>
+                                                <td className="px-6 py-4 font-bold">{score.rawScore}</td>
+                                                <td className="px-6 py-4 text-slate-500">{new Date(score.dateTime).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4">{renderStatusBadge(score.status)}</td>
+                                                <td className="px-6 py-4 text-right">
+                                                    <button onClick={() => setSelectedScore(score)} className="p-2 hover:bg-slate-100 rounded-full text-slate-500">
+                                                        <Eye className="w-4 h-4" />
                                                     </button>
                                                 </td>
                                             </tr>
@@ -242,20 +292,20 @@ export function ScoreApproval() {
                                     </tbody>
                                 </table>
                             </div>
-                        )}
-                    </div>
-                </div>
+                        </div>
+                    </TabsContent>
+                </Tabs>
 
-                {/* Review Dialog */}
                 {selectedScore && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                         <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col">
-
                             {/* Dialog Header */}
                             <div className="sticky top-0 z-10 bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-2xl flex justify-between items-center shrink-0">
                                 <div>
                                     <h3 className="text-2xl font-bold">Review Score Submission</h3>
-                                    <p className="text-blue-100 mt-1">Verify details before approving</p>
+                                    <p className="text-blue-100 mt-1">
+                                        {isHistoryView ? "View Score Details" : "Verify details before approving"}
+                                    </p>
                                 </div>
                                 <button onClick={() => { setSelectedScore(null); setRejectionReason(''); }} className="p-2 hover:bg-white/10 rounded-full transition-colors">
                                     <XCircle className="w-6 h-6" />
@@ -294,7 +344,6 @@ export function ScoreApproval() {
                                     </div>
                                 </div>
 
-                                {/* --- CHI TIẾT PHIẾU ĐIỂM --- */}
                                 <div className="space-y-3">
                                     <h4 className="font-bold text-gray-700 dark:text-gray-200 flex items-center gap-2">
                                         <Award className="w-5 h-5 text-purple-600" /> Scorecard Details
@@ -302,7 +351,7 @@ export function ScoreApproval() {
 
                                     {(!parsedDetails || parsedDetails.length === 0) ? (
                                         <div className="p-8 text-center text-gray-500 bg-gray-50 rounded-lg border border-dashed">
-                                            No detailed arrow data available (Legacy format or Error)
+                                            No detailed arrow data available
                                         </div>
                                     ) : (
                                         <div className="space-y-3">
@@ -355,32 +404,42 @@ export function ScoreApproval() {
                                     )}
                                 </div>
 
-                                {/* Rejection Reason Input */}
-                                <div>
-                                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                                        Rejection Reason <span className="text-red-500 font-normal text-xs">(required if rejecting)</span>
-                                    </label>
-                                    <textarea
-                                        placeholder="e.g., Incorrect equipment listed, score doesn't match target face..."
-                                        value={rejectionReason}
-                                        onChange={(e) => setRejectionReason(e.target.value)}
-                                        rows={3}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-800"
-                                    />
-                                </div>
+                                {/* Rejection Reason Input (Only in pending) */}
+                                {!isHistoryView && (
+                                    <div>
+                                        <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                                            Rejection Reason <span className="text-red-500 font-normal text-xs">(required if rejecting)</span>
+                                        </label>
+                                        <textarea
+                                            placeholder="e.g., Incorrect equipment listed, score doesn't match target face..."
+                                            value={rejectionReason}
+                                            onChange={(e) => setRejectionReason(e.target.value)}
+                                            rows={3}
+                                            className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-slate-800"
+                                        />
+                                    </div>
+                                )}
                             </div>
 
                             {/* Actions Footer */}
                             <div className="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-slate-800 rounded-b-2xl flex gap-3">
-                                <button onClick={() => setSelectedScore(null)} disabled={isProcessing} className="flex-1 py-3 border rounded-lg font-semibold hover:bg-gray-200 transition-colors">
-                                    Cancel
-                                </button>
-                                <button onClick={handleReject} disabled={!rejectionReason.trim() || isProcessing} className="flex-1 py-3 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-semibold disabled:opacity-50 transition-colors flex justify-center gap-2">
-                                    {isProcessing ? <Loader2 className="animate-spin" /> : <><XCircle className="w-5 h-5" /> Reject</>}
-                                </button>
-                                <button onClick={handleApprove} disabled={isProcessing} className="flex-1 py-3 bg-green-600 text-white hover:bg-green-700 rounded-lg font-semibold shadow-lg shadow-green-200 disabled:opacity-50 transition-colors flex justify-center gap-2">
-                                    {isProcessing ? <Loader2 className="animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Approve</>}
-                                </button>
+                                {isHistoryView ? (
+                                    <button onClick={() => setSelectedScore(null)} className="w-full py-3 border rounded-lg font-semibold hover:bg-gray-200 transition-colors">
+                                        Close Details
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button onClick={() => setSelectedScore(null)} disabled={isProcessing} className="flex-1 py-3 border rounded-lg font-semibold hover:bg-gray-200 transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button onClick={handleReject} disabled={!rejectionReason.trim() || isProcessing} className="flex-1 py-3 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg font-semibold disabled:opacity-50 transition-colors flex justify-center gap-2">
+                                            {isProcessing ? <Loader2 className="animate-spin" /> : <><XCircle className="w-5 h-5" /> Reject</>}
+                                        </button>
+                                        <button onClick={handleApprove} disabled={isProcessing} className="flex-1 py-3 bg-green-600 text-white hover:bg-green-700 rounded-lg font-semibold shadow-lg shadow-green-200 disabled:opacity-50 transition-colors flex justify-center gap-2">
+                                            {isProcessing ? <Loader2 className="animate-spin" /> : <><CheckCircle className="w-5 h-5" /> Approve</>}
+                                        </button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>

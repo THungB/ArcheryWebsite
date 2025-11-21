@@ -1,0 +1,56 @@
+-- MySQL dump 10.13  Distrib 8.0.43, for Win64 (x86_64)
+--
+-- Host: localhost    Database: archery
+-- ------------------------------------------------------
+-- Server version	9.4.0
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `arrow`
+--
+
+DROP TABLE IF EXISTS `arrow`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `arrow` (
+  `arrow_id` int NOT NULL AUTO_INCREMENT,
+  `end_id` int NOT NULL,
+  `arrow_value` int NOT NULL,
+  `is_x` bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (`arrow_id`),
+  KEY `end_id` (`end_id`),
+  CONSTRAINT `arrow_ibfk_1` FOREIGN KEY (`end_id`) REFERENCES `end` (`end_id`),
+  CONSTRAINT `arrow_chk_1` CHECK ((`arrow_value` between 0 and 10))
+) ENGINE=InnoDB AUTO_INCREMENT=151 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `arrow`
+--
+
+LOCK TABLES `arrow` WRITE;
+/*!40000 ALTER TABLE `arrow` DISABLE KEYS */;
+INSERT INTO `arrow` VALUES (1,1,10,_binary ''),(2,1,10,_binary '\0'),(3,1,9,_binary '\0'),(4,1,9,_binary '\0'),(5,1,9,_binary '\0'),(6,1,9,_binary '\0'),(7,3,10,_binary ''),(8,3,10,_binary '\0'),(9,3,10,_binary '\0'),(10,3,9,_binary '\0'),(11,3,9,_binary '\0'),(12,3,9,_binary '\0'),(13,4,10,_binary '\0'),(14,4,10,_binary '\0'),(15,4,9,_binary '\0'),(16,4,9,_binary '\0'),(17,4,9,_binary '\0'),(18,4,8,_binary '\0'),(19,5,10,_binary ''),(20,5,10,_binary ''),(21,5,10,_binary '\0'),(22,5,10,_binary '\0'),(23,5,9,_binary '\0'),(24,5,9,_binary '\0'),(25,6,10,_binary '\0'),(26,6,9,_binary '\0'),(27,6,9,_binary '\0'),(28,6,8,_binary '\0'),(29,6,8,_binary '\0'),(30,6,8,_binary '\0'),(31,7,10,_binary ''),(32,7,10,_binary '\0'),(33,7,10,_binary '\0'),(34,7,10,_binary '\0'),(35,7,9,_binary '\0'),(36,7,9,_binary '\0'),(37,8,10,_binary '\0'),(38,8,10,_binary '\0'),(39,8,9,_binary '\0'),(40,8,9,_binary '\0'),(41,8,9,_binary '\0'),(42,8,9,_binary '\0'),(43,9,10,_binary '\0'),(44,9,9,_binary '\0'),(45,9,9,_binary '\0'),(46,9,8,_binary '\0'),(47,9,8,_binary '\0'),(48,9,7,_binary '\0'),(49,10,10,_binary ''),(50,10,10,_binary '\0'),(51,10,9,_binary '\0'),(52,10,9,_binary '\0'),(53,10,8,_binary '\0'),(54,10,8,_binary '\0'),(55,11,10,_binary '\0'),(56,11,10,_binary '\0'),(57,11,9,_binary '\0'),(58,11,8,_binary '\0'),(59,11,7,_binary '\0'),(60,11,6,_binary '\0'),(61,12,9,_binary '\0'),(62,12,9,_binary '\0'),(63,12,8,_binary '\0'),(64,12,8,_binary '\0'),(65,12,7,_binary '\0'),(66,12,7,_binary '\0'),(67,13,10,_binary ''),(68,13,10,_binary ''),(69,13,10,_binary '\0'),(70,13,9,_binary '\0'),(71,13,9,_binary '\0'),(72,13,8,_binary '\0'),(73,14,10,_binary '\0'),(74,14,9,_binary '\0'),(75,14,8,_binary '\0'),(76,14,7,_binary '\0'),(77,14,6,_binary '\0'),(78,14,0,_binary '\0'),(79,15,10,_binary ''),(80,15,10,_binary ''),(81,15,10,_binary ''),(82,15,10,_binary ''),(83,15,10,_binary ''),(84,15,10,_binary ''),(85,16,10,_binary ''),(86,16,10,_binary ''),(87,16,10,_binary ''),(88,16,10,_binary ''),(89,16,10,_binary ''),(90,16,10,_binary ''),(91,17,10,_binary ''),(92,17,10,_binary ''),(93,17,10,_binary ''),(94,17,10,_binary ''),(95,17,10,_binary ''),(96,17,10,_binary ''),(97,18,9,_binary '\0'),(98,18,8,_binary '\0'),(99,18,8,_binary '\0'),(100,18,7,_binary '\0'),(101,18,7,_binary '\0'),(102,18,6,_binary '\0'),(103,19,10,_binary ''),(104,19,8,_binary '\0'),(105,19,8,_binary '\0'),(106,19,8,_binary '\0'),(107,19,8,_binary '\0'),(108,19,0,_binary '\0'),(109,20,9,_binary '\0'),(110,20,8,_binary '\0'),(111,20,8,_binary '\0'),(112,20,7,_binary '\0'),(113,20,6,_binary '\0'),(114,20,6,_binary '\0'),(115,21,10,_binary ''),(116,21,10,_binary ''),(117,21,8,_binary '\0'),(118,21,8,_binary '\0'),(119,21,7,_binary '\0'),(120,21,5,_binary '\0'),(121,22,9,_binary '\0'),(122,22,8,_binary '\0'),(123,22,7,_binary '\0'),(124,22,6,_binary '\0'),(125,22,5,_binary '\0'),(126,22,5,_binary '\0'),(127,23,7,_binary '\0'),(128,23,7,_binary '\0'),(129,23,7,_binary '\0'),(130,23,7,_binary '\0'),(131,23,7,_binary '\0'),(132,23,7,_binary '\0'),(133,24,9,_binary '\0'),(134,24,8,_binary '\0'),(135,24,7,_binary '\0'),(136,24,6,_binary '\0'),(137,24,6,_binary '\0'),(138,24,5,_binary '\0'),(139,25,9,_binary '\0'),(140,25,7,_binary '\0'),(141,25,6,_binary '\0'),(142,25,6,_binary '\0'),(143,25,5,_binary '\0'),(144,25,5,_binary '\0'),(145,26,9,_binary '\0'),(146,26,7,_binary '\0'),(147,26,6,_binary '\0'),(148,26,6,_binary '\0'),(149,26,6,_binary '\0'),(150,26,5,_binary '\0');
+/*!40000 ALTER TABLE `arrow` ENABLE KEYS */;
+UNLOCK TABLES;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2025-11-21 22:44:28

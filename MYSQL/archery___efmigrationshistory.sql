@@ -35,7 +35,7 @@ CREATE TABLE `__efmigrationshistory` (
 
 LOCK TABLES `__efmigrationshistory` WRITE;
 /*!40000 ALTER TABLE `__efmigrationshistory` DISABLE KEYS */;
-INSERT INTO `__efmigrationshistory` VALUES ('20251120034023_AddArcherNewColumns','9.0.0'),('20251121131321_AddSystemLogs','9.0.0');
+INSERT INTO `__efmigrationshistory` VALUES ('20251120034023_AddArcherNewColumns','9.0.0'),('20251121131321_AddSystemLogs','9.0.0'),('20251121143355_UpdateCompetitionDetails','9.0.0');
 /*!40000 ALTER TABLE `__efmigrationshistory` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -48,4 +48,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 20:28:35
+-- Dump completed on 2025-11-21 22:44:27

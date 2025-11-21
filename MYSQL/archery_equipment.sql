@@ -16,37 +16,27 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `end`
+-- Table structure for table `equipment`
 --
 
-DROP TABLE IF EXISTS `end`;
+DROP TABLE IF EXISTS `equipment`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `end` (
-  `end_id` int NOT NULL AUTO_INCREMENT,
-  `score_id` int NOT NULL,
-  `end_number` int NOT NULL,
-  `end_score` int NOT NULL,
-  `round_range_id` int DEFAULT NULL,
-  `range_id` int NOT NULL DEFAULT '1',
-  PRIMARY KEY (`end_id`),
-  KEY `score_id` (`score_id`),
-  KEY `fk_end_roundrange` (`round_range_id`),
-  KEY `end_ibfk_2` (`range_id`),
-  CONSTRAINT `end_ibfk_1` FOREIGN KEY (`score_id`) REFERENCES `score` (`score_id`),
-  CONSTRAINT `end_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`),
-  CONSTRAINT `fk_end_roundrange` FOREIGN KEY (`round_range_id`) REFERENCES `roundrange` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `equipment` (
+  `equipment_id` int NOT NULL AUTO_INCREMENT,
+  `division_type` enum('Recurve','Compound','Recurve Barebow','Compound Barebow','Longbow') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  PRIMARY KEY (`equipment_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `end`
+-- Dumping data for table `equipment`
 --
 
-LOCK TABLES `end` WRITE;
-/*!40000 ALTER TABLE `end` DISABLE KEYS */;
-INSERT INTO `end` VALUES (1,1,1,56,1,1),(2,1,2,54,1,1);
-/*!40000 ALTER TABLE `end` ENABLE KEYS */;
+LOCK TABLES `equipment` WRITE;
+/*!40000 ALTER TABLE `equipment` DISABLE KEYS */;
+INSERT INTO `equipment` VALUES (1,'Recurve'),(2,'Compound'),(3,'Recurve Barebow'),(4,'Compound Barebow'),(5,'Longbow');
+/*!40000 ALTER TABLE `equipment` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -58,4 +48,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 20:28:34
+-- Dump completed on 2025-11-21 22:44:27

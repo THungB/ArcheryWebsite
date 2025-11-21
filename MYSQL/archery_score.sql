@@ -16,27 +16,37 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `equipment`
+-- Table structure for table `score`
 --
 
-DROP TABLE IF EXISTS `equipment`;
+DROP TABLE IF EXISTS `score`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `equipment` (
-  `equipment_id` int NOT NULL AUTO_INCREMENT,
-  `division_type` enum('Recurve','Compound','Recurve Barebow','Compound Barebow','Longbow') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`equipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `score` (
+  `score_id` int NOT NULL AUTO_INCREMENT,
+  `archer_id` int NOT NULL,
+  `round_id` int NOT NULL,
+  `comp_id` int DEFAULT NULL,
+  `date_shot` date NOT NULL,
+  `total_score` int NOT NULL,
+  PRIMARY KEY (`score_id`),
+  KEY `archer_id` (`archer_id`),
+  KEY `round_id` (`round_id`),
+  KEY `comp_id` (`comp_id`),
+  CONSTRAINT `score_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
+  CONSTRAINT `score_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
+  CONSTRAINT `score_ibfk_3` FOREIGN KEY (`comp_id`) REFERENCES `competition` (`comp_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1005 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `equipment`
+-- Dumping data for table `score`
 --
 
-LOCK TABLES `equipment` WRITE;
-/*!40000 ALTER TABLE `equipment` DISABLE KEYS */;
-INSERT INTO `equipment` VALUES (1,'Recurve'),(2,'Compound'),(3,'Recurve Barebow'),(4,'Compound Barebow'),(5,'Longbow');
-/*!40000 ALTER TABLE `equipment` ENABLE KEYS */;
+LOCK TABLES `score` WRITE;
+/*!40000 ALTER TABLE `score` DISABLE KEYS */;
+INSERT INTO `score` VALUES (1,1,1,1,'2024-06-15',650),(2,3,2,1,'2024-06-15',680),(3,7,2,1,'2024-06-15',695),(4,2,1,2,'2024-11-01',600),(5,4,3,2,'2024-11-01',300),(1001,1,1,103,'2024-12-15',645),(1002,2,1,NULL,'2025-11-21',336),(1003,1,1,NULL,'2025-11-21',299),(1004,1,1,NULL,'2025-11-21',559);
+/*!40000 ALTER TABLE `score` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -48,4 +58,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 20:28:35
+-- Dump completed on 2025-11-21 22:44:27

@@ -16,9 +16,9 @@ namespace ArcheryWebsite.Controllers
             _context = context;
         }
 
-        // GET: api/StagingScore
+        // GET: api/StagingScore (Lấy lịch sử - Đã sửa lỗi Circular Reference)
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Stagingscore>>> GetStagingScores()
+        public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetStagingScores()
         {
             try
             {
@@ -29,41 +29,70 @@ namespace ArcheryWebsite.Controllers
                     .OrderByDescending(ss => ss.DateTime)
                     .ToListAsync();
 
-                return Ok(stagingScores);
+                // MAP SANG DTO ĐỂ TRÁNH LỖI JSON CYCLE
+                var response = stagingScores.Select(ss => new StagingScoreResponseDto
+                {
+                    StagingId = ss.StagingId,
+                    ArcherId = ss.ArcherId,
+                    RoundId = ss.RoundId,
+                    EquipmentId = ss.EquipmentId,
+                    DateTime = ss.DateTime,
+                    RawScore = ss.RawScore,
+                    Status = ss.Status ?? "pending",
+                    ArrowValues = ss.ArrowValues ?? "[]",
+                    ArcherName = ss.Archer != null ? $"{ss.Archer.FirstName} {ss.Archer.LastName}" : "Unknown",
+                    RoundName = ss.Round != null ? ss.Round.RoundName : "Unknown",
+                    EquipmentType = ss.Equipment != null ? ss.Equipment.DivisionType : "Unknown"
+                });
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
+                // Ghi log lỗi ra console server để dễ debug
+                Console.WriteLine($"Error getting history: {ex.Message}");
                 return StatusCode(500, new { message = "Error retrieving staging scores", error = ex.Message });
             }
         }
 
-        // GET: api/StagingScore/pending
+        // GET: api/StagingScore/pending (Đã thêm try-catch an toàn)
         [HttpGet("pending")]
         public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetPendingScores()
         {
-            var pendingScores = await _context.Stagingscores
-                .Where(ss => ss.Status == "pending")
-                .Include(ss => ss.Archer)
-                .Include(ss => ss.Round)
-                .Include(ss => ss.Equipment)
-                .OrderBy(ss => ss.DateTime)
-                .ToListAsync();
-
-            return Ok(pendingScores.Select(ss => new StagingScoreResponseDto
+            try
             {
-                StagingId = ss.StagingId,
-                ArcherId = ss.ArcherId,
-                RoundId = ss.RoundId,
-                EquipmentId = ss.EquipmentId,
-                DateTime = ss.DateTime,
-                RawScore = ss.RawScore,
-                Status = ss.Status ?? "pending",
-                ArrowValues = ss.ArrowValues ?? "[]",
-                ArcherName = $"{ss.Archer.FirstName} {ss.Archer.LastName}",
-                RoundName = ss.Round.RoundName,
-                EquipmentType = ss.Equipment.DivisionType
-            }));
+                var pendingScores = await _context.Stagingscores
+                    .Where(ss => ss.Status == "pending")
+                    .Include(ss => ss.Archer)
+                    .Include(ss => ss.Round)
+                    .Include(ss => ss.Equipment)
+                    .OrderBy(ss => ss.DateTime)
+                    .ToListAsync();
+
+                return Ok(pendingScores.Select(ss => new StagingScoreResponseDto
+                {
+                    StagingId = ss.StagingId,
+                    ArcherId = ss.ArcherId,
+                    RoundId = ss.RoundId,
+                    EquipmentId = ss.EquipmentId,
+                    DateTime = ss.DateTime,
+                    RawScore = ss.RawScore,
+                    Status = ss.Status ?? "pending",
+                    ArrowValues = ss.ArrowValues ?? "[]",
+                    ArcherName = ss.Archer != null ? $"{ss.Archer.FirstName} {ss.Archer.LastName}" : "Unknown",
+                    RoundName = ss.Round != null ? ss.Round.RoundName : "Unknown",
+                    EquipmentType = ss.Equipment != null ? ss.Equipment.DivisionType : "Unknown"
+                }));
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error getting pending: {ex.Message}");
+                return StatusCode(500, new { message = "Error retrieving pending scores", error = ex.Message });
+            }
         }
+
+        // ... GIỮ NGUYÊN CÁC HÀM KHÁC (GetStagingScore, CreateStagingScore, ApproveScore, RejectScore, DeleteStagingScore) ...
+        // (Bạn chỉ cần copy đè 2 hàm Get ở trên vào file hiện tại là được)
 
         // GET: api/StagingScore/5
         [HttpGet("{id}")]
