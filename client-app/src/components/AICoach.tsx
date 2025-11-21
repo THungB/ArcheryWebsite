@@ -1,7 +1,6 @@
-﻿import { useState, useRef, useEffect } from 'react'; // Import useRef and useEffect
-import { MessageCircle, Send, X, Bot } from 'lucide-react';
+﻿import { useState, useRef, useEffect } from 'react';
+import { Send, X, Bot } from 'lucide-react';
 import { Button } from './ui/button';
-import { ScrollArea } from './ui/scroll-area';
 
 export function AICoach({ userId }: { userId: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -60,6 +59,8 @@ export function AICoach({ userId }: { userId: string }) {
             setMessages(prev => [...prev, { role: 'ai', content: data.response }]);
 
         } catch (error) {
+            // [FIX] Log lỗi ra console để sử dụng biến 'error', tránh lỗi linter
+            console.error("AICoach Error:", error);
             setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I’m having trouble connecting right now." }]);
         } finally {
             setIsLoading(false);

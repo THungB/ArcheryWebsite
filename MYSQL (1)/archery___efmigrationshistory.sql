@@ -16,31 +16,27 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `round`
+-- Table structure for table `__efmigrationshistory`
 --
 
-DROP TABLE IF EXISTS `round`;
+DROP TABLE IF EXISTS `__efmigrationshistory`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `round` (
-  `round_id` int NOT NULL AUTO_INCREMENT,
-  `round_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-  `valid_from` date NOT NULL DEFAULT '2000-01-01',
-  `valid_to` date DEFAULT NULL,
-  `round_family_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  PRIMARY KEY (`round_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `__efmigrationshistory` (
+  `MigrationId` varchar(150) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `ProductVersion` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  PRIMARY KEY (`MigrationId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `round`
+-- Dumping data for table `__efmigrationshistory`
 --
 
-LOCK TABLES `round` WRITE;
-/*!40000 ALTER TABLE `round` DISABLE KEYS */;
-INSERT INTO `round` VALUES (1,'WA 70/720','Olympic Recurve Ranking Round','2020-01-01',NULL,'WA720'),(2,'WA 50/720','Compound Ranking Round','2020-01-01',NULL,'WA720'),(3,'Club 30','Beginner Round 30m','2020-01-01',NULL,'CLUB');
-/*!40000 ALTER TABLE `round` ENABLE KEYS */;
+LOCK TABLES `__efmigrationshistory` WRITE;
+/*!40000 ALTER TABLE `__efmigrationshistory` DISABLE KEYS */;
+INSERT INTO `__efmigrationshistory` VALUES ('20251120034023_AddArcherNewColumns','9.0.0'),('20251121131321_AddSystemLogs','9.0.0');
+/*!40000 ALTER TABLE `__efmigrationshistory` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -52,4 +48,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 18:24:27
+-- Dump completed on 2025-11-21 20:28:35

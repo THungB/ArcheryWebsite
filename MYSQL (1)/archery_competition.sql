@@ -16,33 +16,30 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `round_equivalence`
+-- Table structure for table `competition`
 --
 
-DROP TABLE IF EXISTS `round_equivalence`;
+DROP TABLE IF EXISTS `competition`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `round_equivalence` (
-  `equivalence_id` int NOT NULL AUTO_INCREMENT,
-  `round_id` int NOT NULL,
-  `equivalent_round_id` int NOT NULL,
-  `valid_from` date NOT NULL DEFAULT '2000-01-01',
-  `valid_to` date DEFAULT NULL,
-  PRIMARY KEY (`equivalence_id`),
-  KEY `FK_RoundEquivalence_Round_Source` (`round_id`),
-  KEY `FK_RoundEquivalence_Round_Target` (`equivalent_round_id`),
-  CONSTRAINT `FK_RoundEquivalence_Round_Source` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE,
-  CONSTRAINT `FK_RoundEquivalence_Round_Target` FOREIGN KEY (`equivalent_round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `competition` (
+  `comp_id` int NOT NULL AUTO_INCREMENT,
+  `comp_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `start_date` date NOT NULL,
+  `end_date` date NOT NULL,
+  `is_club_championship` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`comp_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=104 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `round_equivalence`
+-- Dumping data for table `competition`
 --
 
-LOCK TABLES `round_equivalence` WRITE;
-/*!40000 ALTER TABLE `round_equivalence` DISABLE KEYS */;
-/*!40000 ALTER TABLE `round_equivalence` ENABLE KEYS */;
+LOCK TABLES `competition` WRITE;
+/*!40000 ALTER TABLE `competition` DISABLE KEYS */;
+INSERT INTO `competition` VALUES (1,'Summer Club Championship 2024','2024-06-15','2024-06-16',1),(2,'Weekly Shoot Nov Week 1','2024-11-01','2024-11-01',0),(101,'Spring Opening Shoot 2025','2025-12-01','2025-12-03',0),(102,'National Qualification Round','2025-11-19','2025-11-23',1),(103,'Winter Club Championship 2024','2024-12-15','2024-12-16',1);
+/*!40000 ALTER TABLE `competition` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -54,4 +51,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 18:16:47
+-- Dump completed on 2025-11-21 20:28:35

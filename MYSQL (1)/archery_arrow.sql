@@ -16,27 +16,32 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `equipment`
+-- Table structure for table `arrow`
 --
 
-DROP TABLE IF EXISTS `equipment`;
+DROP TABLE IF EXISTS `arrow`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `equipment` (
-  `equipment_id` int NOT NULL AUTO_INCREMENT,
-  `division_type` enum('Recurve','Compound','Recurve Barebow','Compound Barebow','Longbow') CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
-  PRIMARY KEY (`equipment_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `arrow` (
+  `arrow_id` int NOT NULL AUTO_INCREMENT,
+  `end_id` int NOT NULL,
+  `arrow_value` int NOT NULL,
+  `is_x` bit(1) NOT NULL DEFAULT b'0',
+  PRIMARY KEY (`arrow_id`),
+  KEY `end_id` (`end_id`),
+  CONSTRAINT `arrow_ibfk_1` FOREIGN KEY (`end_id`) REFERENCES `end` (`end_id`),
+  CONSTRAINT `arrow_chk_1` CHECK ((`arrow_value` between 0 and 10))
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `equipment`
+-- Dumping data for table `arrow`
 --
 
-LOCK TABLES `equipment` WRITE;
-/*!40000 ALTER TABLE `equipment` DISABLE KEYS */;
-INSERT INTO `equipment` VALUES (1,'Recurve'),(2,'Compound'),(3,'Recurve Barebow'),(4,'Compound Barebow'),(5,'Longbow');
-/*!40000 ALTER TABLE `equipment` ENABLE KEYS */;
+LOCK TABLES `arrow` WRITE;
+/*!40000 ALTER TABLE `arrow` DISABLE KEYS */;
+INSERT INTO `arrow` VALUES (1,1,10,_binary ''),(2,1,10,_binary '\0'),(3,1,9,_binary '\0'),(4,1,9,_binary '\0'),(5,1,9,_binary '\0'),(6,1,9,_binary '\0');
+/*!40000 ALTER TABLE `arrow` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -48,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 18:24:28
+-- Dump completed on 2025-11-21 20:28:36

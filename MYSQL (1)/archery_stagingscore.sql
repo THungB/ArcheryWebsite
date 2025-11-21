@@ -38,7 +38,7 @@ CREATE TABLE `stagingscore` (
   CONSTRAINT `stagingscore_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
   CONSTRAINT `stagingscore_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
   CONSTRAINT `stagingscore_ibfk_3` FOREIGN KEY (`equipment_id`) REFERENCES `equipment` (`equipment_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -47,6 +47,7 @@ CREATE TABLE `stagingscore` (
 
 LOCK TABLES `stagingscore` WRITE;
 /*!40000 ALTER TABLE `stagingscore` DISABLE KEYS */;
+INSERT INTO `stagingscore` VALUES (1,1,1,1,'2025-11-21 20:25:52',560,'pending','[\n    {\n        \"rangeId\": 1,\n        \"ends\": [\n            [\"10\", \"9\", \"9\", \"8\", \"8\", \"7\"],\n            [\"X\", \"10\", \"9\", \"9\", \"8\", \"8\"],\n            [\"10\", \"10\", \"9\", \"8\", \"7\", \"6\"],\n            [\"9\", \"9\", \"8\", \"8\", \"7\", \"7\"],\n            [\"X\", \"X\", \"10\", \"9\", \"9\", \"8\"],\n            [\"10\", \"9\", \"8\", \"7\", \"6\", \"M\"]\n        ]\n    }\n]'),(2,2,1,1,'2025-11-21 19:25:52',620,'pending','[\n    {\n        \"rangeId\": 1,\n        \"ends\": [\n            [\"X\", \"10\", \"10\", \"9\", \"9\", \"9\"],\n            [\"10\", \"10\", \"9\", \"9\", \"9\", \"8\"],\n            [\"X\", \"X\", \"10\", \"10\", \"9\", \"9\"],\n            [\"10\", \"9\", \"9\", \"8\", \"8\", \"8\"],\n            [\"X\", \"10\", \"10\", \"10\", \"9\", \"9\"],\n            [\"10\", \"10\", \"9\", \"9\", \"9\", \"9\"]\n        ]\n    }\n]'),(3,3,2,2,'2025-11-20 20:25:52',150,'rejected','[]');
 /*!40000 ALTER TABLE `stagingscore` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -59,4 +60,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 18:24:28
+-- Dump completed on 2025-11-21 20:28:35

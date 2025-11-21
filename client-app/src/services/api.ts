@@ -40,6 +40,25 @@ export interface StagingScore { stagingId: number; archerId: number; roundId: nu
 export interface ProcessScoreResponse { message: string; scoreId?: number; }
 export interface CreateArcherRequest { firstName: string; lastName: string; email: string; gender: string; dateOfBirth: string; phone?: string; defaultEquipmentId?: number; }
 
+// --- System / Dashboard Interfaces ---
+export interface SystemLog {
+    logId: number;
+    timestamp: string;
+    level: string;
+    user: string;
+    action: string;
+    details: string;
+    ipAddress: string;
+}
+
+export interface SystemStats {
+    totalUsers: number;
+    activeCompetitions: number;
+    totalScores: number;
+    pendingApprovals: number;
+    totalCompetitions: number;
+}
+
 // --- API OBJECTS ---
 
 export const commonAPI = {
@@ -72,4 +91,10 @@ export const archerAPI = {
 
 export const recorderAPI = {
     createArcher: (data: CreateArcherRequest, token: string) => apiCall('/Archer', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify(data) })
+};
+
+// --- Dashboard API ---
+export const dashboardAPI = {
+    getStats: () => apiCall<SystemStats>('/Dashboard/stats'),
+    getLogs: () => apiCall<SystemLog[]>('/Dashboard/logs'),
 };

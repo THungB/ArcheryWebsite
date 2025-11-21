@@ -91,7 +91,6 @@ namespace ArcheryWebsite.Controllers
         }
 
         // POST: api/StagingScore
-        // [FIXED] Đã sửa để nhận ScoreData thay vì Arrows
         [HttpPost]
         public async Task<ActionResult> CreateStagingScore(CreateStagingScoreDto dto)
         {
@@ -100,11 +99,9 @@ namespace ArcheryWebsite.Controllers
                 if (dto.ArcherId <= 0 || dto.RoundId <= 0 || dto.EquipmentId <= 0)
                     return BadRequest(new { message = "Invalid IDs provided" });
 
-                // SỬA LỖI Ở ĐÂY: Kiểm tra ScoreData thay vì Arrows
                 if (dto.ScoreData == null || !dto.ScoreData.Any())
                     return BadRequest(new { message = "Score data is required" });
 
-                // Serialize ScoreData (object phức tạp) thành chuỗi JSON
                 var jsonOptions = new JsonSerializerOptions
                 {
                     PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -116,8 +113,8 @@ namespace ArcheryWebsite.Controllers
                     ArcherId = dto.ArcherId,
                     RoundId = dto.RoundId,
                     EquipmentId = dto.EquipmentId,
-                    RawScore = 0, // Điểm thô tạm thời = 0, sẽ tính lại khi Approve
-                    ArrowValues = jsonArrowValues, // Lưu chuỗi JSON đúng định dạng mới
+                    RawScore = 0,
+                    ArrowValues = jsonArrowValues,
                     Status = "pending",
                     DateTime = DateTime.Now
                 };
@@ -146,11 +143,9 @@ namespace ArcheryWebsite.Controllers
                 if (stagingScore == null) return NotFound("Staging score not found");
                 if (stagingScore.Status == "approved") return BadRequest("Already approved");
 
-                // 1. Deserialize
                 var stagedData = JsonSerializer.Deserialize<List<StagedRangeData>>(stagingScore.ArrowValues ?? "[]");
                 if (stagedData == null || !stagedData.Any()) throw new Exception("Invalid data.");
 
-                // 2. Load Round Ranges
                 var roundRanges = await _context.Roundranges
                     .Where(rr => rr.RoundId == stagingScore.RoundId)
                     .OrderBy(rr => rr.SequenceNumber)
@@ -158,7 +153,6 @@ namespace ArcheryWebsite.Controllers
 
                 int grandTotal = 0;
 
-                // 3. Create Score
                 var score = new Score
                 {
                     ArcherId = stagingScore.ArcherId,
@@ -170,12 +164,11 @@ namespace ArcheryWebsite.Controllers
                 _context.Scores.Add(score);
                 await _context.SaveChangesAsync();
 
-                // 4. Process Ranges
                 for (int i = 0; i < stagedData.Count; i++)
                 {
                     var rangeData = stagedData[i];
                     var matchingRoundRange = roundRanges.FirstOrDefault(rr => rr.SequenceNumber == i + 1);
-                    
+
                     int rangeIdToUse = matchingRoundRange?.RangeId ?? rangeData.RangeId;
                     int? roundRangeIdToUse = matchingRoundRange?.Id;
 
@@ -183,11 +176,10 @@ namespace ArcheryWebsite.Controllers
                     {
                         var arrowStrings = rangeData.Ends[endIdx];
 
-                        // [UPDATED] SORTING LOGIC: Highest to Lowest (X -> 10 -> 9 ... -> M)
                         var sortedArrows = arrowStrings
-                            .Select(a => new { 
-                                Original = a, 
-                                SortValue = GetSortValue(a) 
+                            .Select(a => new {
+                                Original = a,
+                                SortValue = GetSortValue(a)
                             })
                             .OrderByDescending(x => x.SortValue)
                             .Select(x => x.Original)
@@ -205,12 +197,12 @@ namespace ArcheryWebsite.Controllers
                         await _context.SaveChangesAsync();
 
                         int endTotal = 0;
-                        foreach (var valStr in sortedArrows) // Use sorted list
+                        foreach (var valStr in sortedArrows)
                         {
                             int point = 0;
                             bool isX = false;
                             string cleanVal = valStr.ToUpper().Trim();
-                            
+
                             if (cleanVal == "X") { point = 10; isX = true; }
                             else if (cleanVal == "10") point = 10;
                             else if (cleanVal == "M" || cleanVal == "") point = 0;
@@ -235,6 +227,18 @@ namespace ArcheryWebsite.Controllers
                 stagingScore.Status = "approved";
                 stagingScore.RawScore = grandTotal;
 
+                // [NEW] Ghi log hệ thống
+                var log = new SystemLog
+                {
+                    Timestamp = DateTime.Now,
+                    Level = "info",
+                    User = "Recorder/Admin",
+                    Action = "Approved Score",
+                    Details = $"Score ID {score.ScoreId} approved for Archer ID {stagingScore.ArcherId}. Total: {grandTotal}",
+                    IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown"
+                };
+                _context.SystemLogs.Add(log);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -247,12 +251,11 @@ namespace ArcheryWebsite.Controllers
             }
         }
 
-        // Helper for sorting
         private int GetSortValue(string val)
         {
             var v = val.ToUpper().Trim();
-            if (v == "X") return 11; // Highest
-            if (v == "M" || v == "") return -1; // Lowest
+            if (v == "X") return 11;
+            if (v == "M" || v == "") return -1;
             if (int.TryParse(v, out int p)) return p;
             return 0;
         }
@@ -264,6 +267,17 @@ namespace ArcheryWebsite.Controllers
             var stagingScore = await _context.Stagingscores.FindAsync(id);
             if (stagingScore == null) return NotFound();
             stagingScore.Status = "rejected";
+
+            // [NEW] Log rejection
+            _context.SystemLogs.Add(new SystemLog
+            {
+                Timestamp = DateTime.Now,
+                Level = "warning",
+                User = "Recorder/Admin",
+                Action = "Rejected Score",
+                Details = $"Staging Score {id} rejected. Reason: {reason}"
+            });
+
             await _context.SaveChangesAsync();
             return Ok(new { message = "Rejected" });
         }

@@ -28,6 +28,9 @@ public partial class ArcheryDbContext : DbContext
     public virtual DbSet<Stagingscore> Stagingscores { get; set; }
     public virtual DbSet<RoundEquivalence> RoundEquivalences { get; set; }
 
+    // [NEW] Thêm bảng SystemLogs
+    public virtual DbSet<SystemLog> SystemLogs { get; set; }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
@@ -35,6 +38,20 @@ public partial class ArcheryDbContext : DbContext
         modelBuilder
             .UseCollation("utf8mb4_unicode_ci")
             .HasCharSet("utf8mb4");
+
+        // Mapping cho SystemLog
+        modelBuilder.Entity<SystemLog>(entity =>
+        {
+            entity.ToTable("system_log");
+            entity.HasKey(e => e.LogId);
+            entity.Property(e => e.LogId).HasColumnName("log_id");
+            entity.Property(e => e.Timestamp).HasColumnName("timestamp");
+            entity.Property(e => e.Level).HasColumnName("level");
+            entity.Property(e => e.User).HasColumnName("user");
+            entity.Property(e => e.Action).HasColumnName("action");
+            entity.Property(e => e.Details).HasColumnName("details");
+            entity.Property(e => e.IpAddress).HasColumnName("ip_address");
+        });
 
         modelBuilder.Entity<Range>(entity =>
         {
@@ -130,7 +147,6 @@ public partial class ArcheryDbContext : DbContext
             entity.Property(e => e.ArrowValue).HasColumnName("arrow_value");
             entity.Property(e => e.EndId).HasColumnName("end_id");
 
-            // [MAPPING MỚI] Mapping cho cột IsX
             entity.Property(e => e.IsX)
                   .HasColumnName("is_x")
                   .HasColumnType("bit")
@@ -162,14 +178,11 @@ public partial class ArcheryDbContext : DbContext
             entity.Property(e => e.EndScore).HasColumnName("end_score");
             entity.Property(e => e.RangeId).HasColumnName("range_id");
             entity.Property(e => e.ScoreId).HasColumnName("score_id");
-
-            // [MAPPING MỚI] Mapping cho cột RoundRangeId
             entity.Property(e => e.RoundRangeId).HasColumnName("round_range_id");
 
             entity.HasOne(d => d.Range).WithMany(p => p.Ends).HasForeignKey(d => d.RangeId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("end_ibfk_2");
             entity.HasOne(d => d.Score).WithMany(p => p.Ends).HasForeignKey(d => d.ScoreId).OnDelete(DeleteBehavior.ClientSetNull).HasConstraintName("end_ibfk_1");
 
-            // [MỚI] Relationship với RoundRange (Optional)
             entity.HasOne(d => d.RoundRange)
                   .WithMany()
                   .HasForeignKey(d => d.RoundRangeId)
