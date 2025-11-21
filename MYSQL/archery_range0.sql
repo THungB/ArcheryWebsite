@@ -30,8 +30,18 @@ CREATE TABLE `range` (
   PRIMARY KEY (`range_id`),
   CONSTRAINT `range_chk_1` CHECK ((`distance_meters` in (18,20,30,40,50,60,70,90))),
   CONSTRAINT `range_chk_2` CHECK ((`end_count` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `range`
+--
+
+LOCK TABLES `range` WRITE;
+/*!40000 ALTER TABLE `range` DISABLE KEYS */;
+INSERT INTO `range` VALUES (1,70,6,122),(2,70,6,122),(3,50,6,80),(4,30,12,80);
+/*!40000 ALTER TABLE `range` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -42,4 +52,4 @@ CREATE TABLE `range` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:49
+-- Dump completed on 2025-11-21 18:24:28

@@ -32,8 +32,18 @@ CREATE TABLE `roundrange` (
   KEY `range_id` (`range_id`),
   CONSTRAINT `roundrange_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
   CONSTRAINT `roundrange_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=42 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `roundrange`
+--
+
+LOCK TABLES `roundrange` WRITE;
+/*!40000 ALTER TABLE `roundrange` DISABLE KEYS */;
+INSERT INTO `roundrange` VALUES (1,1,1,1),(2,1,2,2),(3,2,3,1),(4,2,3,2),(5,3,4,1);
+/*!40000 ALTER TABLE `roundrange` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -44,4 +54,4 @@ CREATE TABLE `roundrange` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:50
+-- Dump completed on 2025-11-21 18:24:28

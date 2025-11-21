@@ -35,6 +35,15 @@ CREATE TABLE `round_equivalence` (
   CONSTRAINT `FK_RoundEquivalence_Round_Target` FOREIGN KEY (`equivalent_round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `round_equivalence`
+--
+
+LOCK TABLES `round_equivalence` WRITE;
+/*!40000 ALTER TABLE `round_equivalence` DISABLE KEYS */;
+/*!40000 ALTER TABLE `round_equivalence` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -45,4 +54,4 @@ CREATE TABLE `round_equivalence` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 12:12:44
+-- Dump completed on 2025-11-21 18:16:47

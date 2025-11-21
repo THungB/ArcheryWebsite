@@ -32,6 +32,16 @@ CREATE TABLE `round` (
   PRIMARY KEY (`round_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `round`
+--
+
+LOCK TABLES `round` WRITE;
+/*!40000 ALTER TABLE `round` DISABLE KEYS */;
+INSERT INTO `round` VALUES (1,'WA720','Two ranges of 6 ends at one distance','2000-01-01',NULL,NULL),(2,'WA900','60m, 50m, 40m – 5 ends each','2000-01-01',NULL,NULL),(3,'WA1440','90m, 70m, 50m, 30m','2000-01-01',NULL,NULL),(4,'Metric I','70m, 60m, 50m, 30m','2000-01-01',NULL,NULL),(5,'Metric II','60m, 50m, 40m, 30m','2000-01-01',NULL,NULL),(6,'Metric III','50m, 40m, 30m, 20m','2000-01-01',NULL,NULL),(7,'Metric IV','40m, 30m, 20m, 10m','2000-01-01',NULL,NULL),(8,'Metric V','30m, 20m, 15m, 10m','2000-01-01',NULL,NULL),(9,'Indoor18','18m indoor round','2000-01-01',NULL,NULL),(10,'Short Canberra','50m, 40m, 30m','2000-01-01',NULL,NULL),(11,'Canberra','60m, 50m, 40m','2000-01-01',NULL,NULL),(12,'Long Canberra','90m, 70m, 50m','2000-01-01',NULL,NULL);
+/*!40000 ALTER TABLE `round` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -42,4 +52,4 @@ CREATE TABLE `round` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 12:12:43
+-- Dump completed on 2025-11-21 18:16:48

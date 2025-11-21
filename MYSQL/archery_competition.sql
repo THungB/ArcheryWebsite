@@ -31,6 +31,16 @@ CREATE TABLE `competition` (
   PRIMARY KEY (`comp_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `competition`
+--
+
+LOCK TABLES `competition` WRITE;
+/*!40000 ALTER TABLE `competition` DISABLE KEYS */;
+INSERT INTO `competition` VALUES (1,'Sydney Olympic Park Open','2024-04-21','2024-04-21',0),(2,'Archery NSW State Championships','2024-05-10','2024-05-12',0),(3,'National Indoor Series Qualifier','2024-06-01','2024-06-01',0);
+/*!40000 ALTER TABLE `competition` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -41,4 +51,4 @@ CREATE TABLE `competition` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 12:12:43
+-- Dump completed on 2025-11-21 18:16:48

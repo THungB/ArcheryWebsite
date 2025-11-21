@@ -30,8 +30,18 @@ CREATE TABLE `round` (
   `valid_to` date DEFAULT NULL,
   `round_family_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`round_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `round`
+--
+
+LOCK TABLES `round` WRITE;
+/*!40000 ALTER TABLE `round` DISABLE KEYS */;
+INSERT INTO `round` VALUES (1,'WA 70/720','Olympic Recurve Ranking Round','2020-01-01',NULL,'WA720'),(2,'WA 50/720','Compound Ranking Round','2020-01-01',NULL,'WA720'),(3,'Club 30','Beginner Round 30m','2020-01-01',NULL,'CLUB');
+/*!40000 ALTER TABLE `round` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -42,4 +52,4 @@ CREATE TABLE `round` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:49
+-- Dump completed on 2025-11-21 18:24:27

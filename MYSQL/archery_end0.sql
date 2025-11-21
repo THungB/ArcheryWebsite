@@ -25,19 +25,26 @@ DROP TABLE IF EXISTS `end`;
 CREATE TABLE `end` (
   `end_id` int NOT NULL AUTO_INCREMENT,
   `score_id` int NOT NULL,
-  `range_id` int NOT NULL,
   `end_number` int NOT NULL,
   `end_score` int NOT NULL,
   `round_range_id` int DEFAULT NULL,
   PRIMARY KEY (`end_id`),
   KEY `score_id` (`score_id`),
-  KEY `range_id` (`range_id`),
   KEY `fk_end_roundrange` (`round_range_id`),
   CONSTRAINT `end_ibfk_1` FOREIGN KEY (`score_id`) REFERENCES `score` (`score_id`),
-  CONSTRAINT `end_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`),
   CONSTRAINT `fk_end_roundrange` FOREIGN KEY (`round_range_id`) REFERENCES `roundrange` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=55 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `end`
+--
+
+LOCK TABLES `end` WRITE;
+/*!40000 ALTER TABLE `end` DISABLE KEYS */;
+INSERT INTO `end` VALUES (1,1,1,56,1),(2,1,2,54,1);
+/*!40000 ALTER TABLE `end` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -48,4 +55,4 @@ CREATE TABLE `end` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:48
+-- Dump completed on 2025-11-21 18:24:27

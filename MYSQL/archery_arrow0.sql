@@ -31,8 +31,18 @@ CREATE TABLE `arrow` (
   KEY `end_id` (`end_id`),
   CONSTRAINT `arrow_ibfk_1` FOREIGN KEY (`end_id`) REFERENCES `end` (`end_id`),
   CONSTRAINT `arrow_chk_1` CHECK ((`arrow_value` between 0 and 10))
-) ENGINE=InnoDB AUTO_INCREMENT=325 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `arrow`
+--
+
+LOCK TABLES `arrow` WRITE;
+/*!40000 ALTER TABLE `arrow` DISABLE KEYS */;
+INSERT INTO `arrow` VALUES (1,1,10,_binary ''),(2,1,10,_binary '\0'),(3,1,9,_binary '\0'),(4,1,9,_binary '\0'),(5,1,9,_binary '\0'),(6,1,9,_binary '\0');
+/*!40000 ALTER TABLE `arrow` ENABLE KEYS */;
+UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
@@ -43,4 +53,4 @@ CREATE TABLE `arrow` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 14:29:49
+-- Dump completed on 2025-11-21 18:24:29
