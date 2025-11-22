@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace ArcheryWebsite.Controllers;
 
@@ -21,47 +22,66 @@ public class AIController : ControllerBase
     [HttpPost("chat")]
     public async Task<IActionResult> Chat([FromBody] ChatRequest request)
     {
-        // 1. GET THE GEMINI KEY
         string geminiKey = _configuration["GoogleAI:Key"];
         if (string.IsNullOrEmpty(geminiKey))
         {
             return StatusCode(500, "Server Error: Google AI Key is missing.");
         }
 
-        // 2. PREPARE THE PROMPT
-        var systemInstruction = @"You are an expert Archery Coach AI. 
-        Your goal is to analyze data and give specific, encouraging, and technical advice.
-        - If the user provides score data, analyze the trend (is it going up or down?).
-        - Keep answers concise (under 100 words) and friendly.";
-
-        string finalUserPrompt = request.Message;
-
-        // 3. CONTEXT INJECTION (Same as before)
-        if (DetectsIntentToGetScores(request.Message))
+        try
         {
-            var scores = await _dataService.GetRecentScoresAsync(request.ArcherId);
-            var jsonScores = JsonSerializer.Serialize(scores);
-            finalUserPrompt = $"{request.Message}\n\n[CONTEXT DATA FROM DATABASE]:\n{jsonScores}";
+            var fullContextData = await _dataService.GetFullContextAsync(request.ArcherId);
+
+            var jsonOptions = new JsonSerializerOptions
+            {
+                ReferenceHandler = ReferenceHandler.IgnoreCycles,
+                WriteIndented = false
+            };
+            string jsonContext = JsonSerializer.Serialize(fullContextData, jsonOptions);
+
+            var systemInstruction = $@"
+            You are an expert Archery Coach AI assistant for an application named 'ArcheryTrack'.
+            
+            I will provide you with a JSON object containing the DATABASE CONTEXT regarding the user (Archer).
+            The JSON includes:
+            - 'ArcherProfile': User's name and equipment.
+            - 'History': Recent score logs.
+            - 'PersonalBests': Their best scores per round.
+            - 'UpcomingCompetitions': Competitions happening soon.
+            - 'RoundDefinitions': Rules/info about specific archery rounds.
+            - 'SystemDate': Today's date.
+
+            YOUR TASK:
+            1. Analyze the user's question.
+            2. Look up relevant information in the provided JSON Context.
+            3. Answer the user helpfuly.
+            - If they ask about their performance, calculate trends from 'History'.
+            - If they ask about competitions, check 'UpcomingCompetitions'.
+            - If the answer is not in the data, say you don't have that info recorded.
+            - Keep the tone encouraging, professional, and concise (under 150 words unless detailed analysis is asked).
+
+            [DATABASE CONTEXT]:
+            {jsonContext}
+            ";
+
+            string finalPrompt = $"{systemInstruction}\n\nUser Question: {request.Message}";
+
+            var aiResponse = await CallGeminiApi(geminiKey, finalPrompt);
+
+            return Ok(new { response = aiResponse });
         }
-
-        // Combine system instruction and user prompt for Gemini
-        // (Gemini REST API handles system instructions differently, but simply prepending it works well for simple cases)
-        string combinedPrompt = $"{systemInstruction}\n\nUser Request: {finalUserPrompt}";
-
-        // 4. CALL GEMINI
-        var aiResponse = await CallGeminiApi(geminiKey, combinedPrompt);
-
-        return Ok(new { response = aiResponse });
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { error = ex.Message });
+        }
     }
 
     private async Task<string> CallGeminiApi(string apiKey, string prompt)
     {
-        // 1. UPDATED URL: Using 'gemini-2.5-flash' which was confirmed in your list
         string url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={apiKey}";
 
         using var client = new HttpClient();
 
-        // 2. Gemini JSON Structure
         var requestBody = new
         {
             contents = new[]
@@ -83,15 +103,13 @@ public class AIController : ControllerBase
 
             if (!response.IsSuccessStatusCode)
             {
-                // If this fails, it will tell us exactly why (e.g., 400 Bad Request)
-                return $"Error: Google returned {response.StatusCode}.";
+                var errorMsg = await response.Content.ReadAsStringAsync();
+                return $"Error from Google AI: {response.StatusCode} - {errorMsg}";
             }
 
             var responseString = await response.Content.ReadAsStringAsync();
             using var doc = JsonDocument.Parse(responseString);
 
-            // 3. Parse the Response
-            // Structure: candidates[0] -> content -> parts[0] -> text
             if (doc.RootElement.TryGetProperty("candidates", out var candidates))
             {
                 var text = candidates[0]
@@ -109,13 +127,6 @@ public class AIController : ControllerBase
         {
             return $"System Error: {ex.Message}";
         }
-    }
-
-    private bool DetectsIntentToGetScores(string message)
-    {
-        if (string.IsNullOrWhiteSpace(message)) return false;
-        message = message.ToLower();
-        return message.Contains("score") || message.Contains("history") || message.Contains("performance");
     }
 
     public class ChatRequest

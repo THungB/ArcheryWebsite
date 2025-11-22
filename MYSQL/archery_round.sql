@@ -28,7 +28,7 @@ CREATE TABLE `round` (
   `description` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `valid_from` date NOT NULL DEFAULT '2000-01-01',
   `valid_to` date DEFAULT NULL,
-  `round_family_code` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `round_family_code` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`round_id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -52,4 +52,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-22 11:21:09
+-- Dump completed on 2025-11-22 13:44:19

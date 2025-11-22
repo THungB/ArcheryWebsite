@@ -1,6 +1,8 @@
 ﻿using ArcheryWebsite.Models;
 using Microsoft.EntityFrameworkCore;
+
 namespace ArcheryWebsite.Services;
+
 public class ArcheryDataService
 {
     private readonly ArcheryDbContext _context;
@@ -10,44 +12,68 @@ public class ArcheryDataService
         _context = context;
     }
 
-    // Tool 1: Get recent score history for the AI to analyse
-    // Description for AI: "Get recent scores for an archer to analyse performance trend."
-    public async Task<object> GetRecentScoresAsync(int archerId, int limit = 5)
+    public async Task<object> GetRecentScoresAsync(int archerId, int limit = 5) {return null; }
+    public async Task<object> GetPersonalBestsAsync(int archerId) {return null; }
+
+    public async Task<object> GetFullContextAsync(int archerId)
     {
-        var scores = await _context.Scores
+        var archerInfo = await _context.Archers
+            .Where(a => a.ArcherId == archerId)
+            .Select(a => new {
+                Name = $"{a.FirstName} {a.LastName}",
+                a.Gender,
+                Equipment = _context.Equipment.FirstOrDefault(e => e.EquipmentId == a.DefaultEquipmentId).DivisionType
+            })
+            .FirstOrDefaultAsync();
+        var scoreHistory = await _context.Scores
             .Where(s => s.ArcherId == archerId)
             .OrderByDescending(s => s.DateShot)
-            .Take(limit)
-            .Select(s => new
-            {
+            .Take(10)
+            .Select(s => new {
                 s.DateShot,
                 s.TotalScore,
-                RoundName = s.Round.RoundName,
+                Round = s.Round.RoundName,
                 Competition = s.Comp != null ? s.Comp.CompName : "Practice"
             })
             .ToListAsync();
 
-        if (!scores.Any())
-            return "No scores found for this archer.";
-
-        return scores;
-    }
-
-    // Tool 2: Get Personal Best (PB) scores for an archer
-    // Description for AI: "Get personal best scores for an archer"
-
-    public async Task<object> GetPersonalBestsAsync(int archerId)
-    {
-        var pbs = await _context.Scores
+        var personalBests = await _context.Scores
             .Where(s => s.ArcherId == archerId)
             .GroupBy(s => s.Round.RoundName)
-            .Select(g => new
-            {
+            .Select(g => new {
                 Round = g.Key,
                 BestScore = g.Max(s => s.TotalScore)
             })
             .ToListAsync();
+        var today = DateOnly.FromDateTime(DateTime.Now);
+        var upcomingComps = await _context.Competitions
+            .Where(c => c.EndDate >= today)
+            .OrderBy(c => c.StartDate)
+            .Take(3)
+            .Select(c => new {
+                c.CompName,
+                c.StartDate,
+                c.Location,
+                Details = c.Details
+            })
+            .ToListAsync();
 
-        return pbs;
+        var roundDefinitions = await _context.Rounds
+            .Select(r => new {
+                r.RoundName,
+                r.Description,
+                r.RoundFamilyCode
+            })
+            .ToListAsync();
+
+        return new
+        {
+            ArcherProfile = archerInfo,
+            History = scoreHistory,
+            PersonalBests = personalBests,
+            UpcomingCompetitions = upcomingComps,
+            RoundDefinitions = roundDefinitions,
+            SystemDate = DateTime.Now.ToString("yyyy-MM-dd") // Để AI biết hôm nay là ngày nào
+        };
     }
 }
