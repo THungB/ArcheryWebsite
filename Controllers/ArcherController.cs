@@ -1,9 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ArcheryWebsite.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ArcheryWebsite.Controllers
 {
@@ -182,7 +179,7 @@ namespace ArcheryWebsite.Controllers
             }
         }
 
-        // Thêm vào ArcherController.cs
+        // Added to ArcherController.cs
 
         [HttpGet("{id}/analytics")]
         public async Task<ActionResult> GetArcherAnalytics(int id)
@@ -191,43 +188,43 @@ namespace ArcheryWebsite.Controllers
             {
                 var scores = await _context.Scores
                     .Where(s => s.ArcherId == id)
-                    .Include(s => s.Round) // Quan trọng: Cần RoundName để phân loại
+                    .Include(s => s.Round) // Need RoundName for classification
                     .OrderBy(s => s.DateShot)
                     .ToListAsync();
 
                 if (!scores.Any()) return Ok(new { hasData = false });
 
-                // 1. Lấy danh sách tất cả các loại Round mà user đã chơi
+                // 1. Get list of all Round types played by user
                 var roundTypes = scores.Select(s => s.Round.RoundName).Distinct().OrderBy(x => x).ToList();
 
-                // 2. Xử lý dữ liệu cho Biểu đồ Đường (Line Chart)
-                // Cần format: { date: "01/01", "WA 70/720": 650, "Canberra": null }
+                // 2. Process data for Line Chart
+                // Format needed: { date: "01/01", "WA 70/720": 650, "Canberra": null }
                 var allDates = scores.Select(s => s.DateShot).Distinct().OrderBy(d => d).ToList();
                 var historyData = new List<Dictionary<string, object>>();
 
                 foreach (var date in allDates)
                 {
                     var entry = new Dictionary<string, object>();
-                    entry["date"] = date.ToString("dd/MM"); // Trục X
+                    entry["date"] = date.ToString("dd/MM"); // X Axis
 
                     foreach (var roundName in roundTypes)
                     {
-                        // Tìm điểm của loại Round này vào ngày này
+                        // Find score of this Round type on this date
                         var score = scores.FirstOrDefault(s => s.DateShot == date && s.Round.RoundName == roundName);
                         entry[roundName] = score != null ? score.TotalScore : null;
                     }
                     historyData.Add(entry);
                 }
 
-                // 3. Xử lý dữ liệu cho Biểu đồ Cột Chồng (Stacked Bar Chart)
-                // Cần format: { range: "<600", "WA 70/720": 2, "Canberra": 0 }
+                // 3. Process data for Stacked Bar Chart
+                // Format needed: { range: "<600", "WA 70/720": 2, "Canberra": 0 }
                 var scoreRanges = new[] { "<550", "550-600", "600-650", "650-700", "700+" };
                 var distributionData = new List<Dictionary<string, object>>();
 
                 foreach (var range in scoreRanges)
                 {
                     var entry = new Dictionary<string, object>();
-                    entry["range"] = range; // Trục X
+                    entry["range"] = range; // X Axis
 
                     foreach (var roundName in roundTypes)
                     {
@@ -245,7 +242,7 @@ namespace ArcheryWebsite.Controllers
                     distributionData.Add(entry);
                 }
 
-                // 4. Thống kê tổng quan cho AI
+                // 4. General statistics for AI
                 var statsByRound = scores.GroupBy(s => s.Round.RoundName)
                     .Select(g => new
                     {
@@ -259,7 +256,7 @@ namespace ArcheryWebsite.Controllers
                 return Ok(new
                 {
                     hasData = true,
-                    roundTypes = roundTypes, // Danh sách tên để Frontend vẽ Line/Bar màu
+                    roundTypes = roundTypes, 
                     history = historyData,
                     distribution = distributionData,
                     statsByRound = statsByRound
@@ -271,27 +268,26 @@ namespace ArcheryWebsite.Controllers
             }
         }
 
-        // [QUAN TRỌNG] Đây là hàm Data Science mà bạn đang thiếu
         // GET: api/Archer/5/personal-bests
         [HttpGet("{id}/personal-bests")]
         public async Task<ActionResult<IEnumerable<object>>> GetPersonalBests(int id)
         {
             try
             {
-                // 1. Lấy tất cả điểm số của Archer này
+                // 1. Get all scores of this Archer
                 var scores = await _context.Scores
                     .Where(s => s.ArcherId == id)
                     .Include(s => s.Round)
                     .Include(s => s.Comp)
                     .ToListAsync();
 
-                // Nếu chưa có điểm thì trả về danh sách rỗng
+                // If there are no scores, return an empty list
                 if (!scores.Any())
                 {
                     return Ok(new List<object>());
                 }
 
-                // 2. Data Analytics: Gom nhóm theo loại vòng bắn và tìm điểm cao nhất
+                // 2. Data Analytics: Group by round type and find highest score
                 var personalBests = scores
                     .GroupBy(s => s.RoundId)
                     .Select(g => g.OrderByDescending(s => s.TotalScore).First())

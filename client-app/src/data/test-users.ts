@@ -1,5 +1,5 @@
 // Test user accounts for development and testing only
-// ⚠️ NEVER use these credentials in production!
+// NEVER use these credentials in production!
 
 export interface TestArcher {
   id: number;

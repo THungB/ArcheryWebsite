@@ -125,7 +125,6 @@ export function PersonalBests({ userId }: PersonalBestsProps) {
                                     <div className="flex items-start justify-between">
                                         <div>
                                             <p className="text-xs font-bold text-purple-500 uppercase tracking-wide">Latest Activity</p>
-                                            {/* SỬA LỖI: Dùng roundName trực tiếp */}
                                             <p className="font-bold text-purple-900 text-lg mt-1">
                                                 {latestRound?.roundName || "N/A"}
                                             </p>
@@ -184,11 +183,9 @@ export function PersonalBests({ userId }: PersonalBestsProps) {
                                             <TableCell className="text-slate-600 font-medium">
                                                 {new Date(score.dateShot).toLocaleDateString()}
                                             </TableCell>
-                                            {/* SỬA LỖI: Dùng roundName trực tiếp */}
                                             <TableCell className="text-slate-900">
                                                 {score.roundName || "Unknown Round"}
                                             </TableCell>
-                                            {/* SỬA LỖI: Dùng competitionName trực tiếp */}
                                             <TableCell className="text-slate-600">
                                                 <span className="inline-flex items-center gap-1.5">
                                                     {score.competitionName ? (

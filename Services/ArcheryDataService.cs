@@ -73,7 +73,7 @@ public class ArcheryDataService
             PersonalBests = personalBests,
             UpcomingCompetitions = upcomingComps,
             RoundDefinitions = roundDefinitions,
-            SystemDate = DateTime.Now.ToString("yyyy-MM-dd") // Để AI biết hôm nay là ngày nào
+            SystemDate = DateTime.Now.ToString("yyyy-MM-dd") 
         };
     }
 }

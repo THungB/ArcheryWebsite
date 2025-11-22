@@ -59,7 +59,6 @@ export function AICoach({ userId }: { userId: string }) {
             setMessages(prev => [...prev, { role: 'ai', content: data.response }]);
 
         } catch (error) {
-            // [FIX] Log lỗi ra console để sử dụng biến 'error', tránh lỗi linter
             console.error("AICoach Error:", error);
             setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I’m having trouble connecting right now." }]);
         } finally {

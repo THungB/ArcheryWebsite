@@ -11,9 +11,7 @@ import { NotificationsPanel } from './NotificationsPanel';
 import { PageLayout, Header, MainContent, CardGrid } from './layout/PageLayout';
 import { StatCard } from './ui/stat-card';
 import { AICoach } from './AICoach';
-// [NEW] Import kiểu Competition
 import { Competition } from '../services/api';
-// [NEW] Import Analytics Dashboard
 import { AnalyticsDashboard } from './AnalyticsDashboard';
 
 interface ArcherDashboardProps {
@@ -23,16 +21,16 @@ interface ArcherDashboardProps {
 
 export function ArcherDashboard({ userId, onLogout }: ArcherDashboardProps) {
     const [showScoreEntry, setShowScoreEntry] = useState(false);
-    // [NEW] State để lưu giải đấu được chọn từ tab Competitions
+    // State to store the competition selected from the Competitions tab
     const [selectedCompetition, setSelectedCompetition] = useState<Competition | null>(null);
 
-    // [NEW] Hàm xử lý khi bấm "Join"
+    // Function to handle "Join" click
     const handleJoinCompetition = (comp: Competition) => {
-        setSelectedCompetition(comp); // Lưu giải đấu
-        setShowScoreEntry(true);      // Mở popup ghi điểm
+        setSelectedCompetition(comp); // Save competition
+        setShowScoreEntry(true);      // Open score entry popup
     };
 
-    // [NEW] Hàm đóng popup và reset giải đấu chọn
+    // Function to close popup and reset selected competition
     const handleCloseScoreEntry = () => {
         setShowScoreEntry(false);
         setSelectedCompetition(null);
@@ -111,7 +109,7 @@ export function ArcherDashboard({ userId, onLogout }: ArcherDashboardProps) {
                                 <PersonalBests userId={userId} />
                             </TabsContent>
                             <TabsContent value="competitions" className="space-y-4">
-                                {/* [NEW] Truyền hàm onJoin xuống */}
+                                {/* Pass onJoin function down */}
                                 <CompetitionResults userId={userId} onJoin={handleJoinCompetition} />
                             </TabsContent>
                         </Tabs>
@@ -123,12 +121,12 @@ export function ArcherDashboard({ userId, onLogout }: ArcherDashboardProps) {
             {showScoreEntry && (
                 <ScoreEntry
                     userId={userId}
-                    // [NEW] Truyền giải đấu được chọn
+                    // Pass selected competition
                     preSelectedComp={selectedCompetition}
                     onClose={handleCloseScoreEntry}
                     onSubmit={() => {
                         handleCloseScoreEntry();
-                        // Refresh scores (có thể thêm logic refresh sau)
+                        // Refresh scores 
                     }}
                 />
             )}

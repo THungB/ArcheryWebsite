@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-// [FIX] Xóa AlertCircle không dùng
 import { CheckCircle, Eye, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -17,12 +16,11 @@ export function MyScores({ userId }: MyScoresProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // [NEW] State cho modal chi tiết
+    // [NEW] State for detail modal
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [selectedScoreDetail, setSelectedScoreDetail] = useState<any>(null);
     const [loadingDetail, setLoadingDetail] = useState(false);
 
-    // [FIX] Di chuyển hàm loadScores vào trong useEffect hoặc dùng useCallback để tránh lỗi dependency
     useEffect(() => {
         const loadScores = async () => {
             setLoading(true);
@@ -34,7 +32,7 @@ export function MyScores({ userId }: MyScoresProps) {
             } catch (err: unknown) {
                 console.error(err);
                 const msg = err instanceof Error ? err.message : "Failed to load scores";
-                setError(msg); // [FIX] Sử dụng setError để biến error được dùng
+                setError(msg); 
                 setScores([]);
             } finally {
                 setLoading(false);

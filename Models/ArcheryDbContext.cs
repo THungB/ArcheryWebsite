@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Pomelo.EntityFrameworkCore.MySql.Scaffolding.Internal;
 
 namespace ArcheryWebsite.Models;
@@ -27,8 +25,6 @@ public partial class ArcheryDbContext : DbContext
     public virtual DbSet<Score> Scores { get; set; }
     public virtual DbSet<Stagingscore> Stagingscores { get; set; }
     public virtual DbSet<RoundEquivalence> RoundEquivalences { get; set; }
-
-    // [NEW] Thêm bảng SystemLogs
     public virtual DbSet<SystemLog> SystemLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,7 +35,7 @@ public partial class ArcheryDbContext : DbContext
             .UseCollation("utf8mb4_unicode_ci")
             .HasCharSet("utf8mb4");
 
-        // Mapping cho SystemLog
+        // Mapping for SystemLog
         modelBuilder.Entity<SystemLog>(entity =>
         {
             entity.ToTable("system_log");

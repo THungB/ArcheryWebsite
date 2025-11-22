@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-// [FIX] Removed unused 'Info' and 'Target'
 import { Calendar, Loader2, MapPin, Trophy, ArrowRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
@@ -52,7 +51,6 @@ export function CompetitionResults({ userId, onJoin }: CompetitionResultsProps) 
                                 try {
                                     if (comp.details) details = JSON.parse(comp.details);
                                 } catch (error) {
-                                    // [FIX] Handled empty block statement by logging the error
                                     console.warn("Failed to parse competition details", error);
                                 }
 

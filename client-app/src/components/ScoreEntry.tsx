@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react';
 import { X, Loader2, Target, ChevronRight, ChevronLeft, Lock } from 'lucide-react';
 import { stagingScoreAPI, commonAPI, Round, Competition, Equipment, RoundStructureDto } from '../services/api';
 
-// Dữ liệu lưu trữ điểm số: [RangeIndex][EndIndex][ArrowIndex]
+// Data storage for scores: [RangeIndex][EndIndex][ArrowIndex]
 type ScoreState = string[][][];
 
 interface ScoreEntryProps {
     userId: string;
     onClose: () => void;
     onSubmit: () => void;
-    // [NEW] Nhận giải đấu được chọn sẵn từ màn hình trước
+    // Receive pre-selected competition from previous screen
     preSelectedComp?: Competition | null;
 }
 
@@ -28,19 +28,19 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
     const [currentEndIdx, setCurrentEndIdx] = useState(0);
     const [scores, setScores] = useState<ScoreState>([]);
 
-    // Danh sách đầy đủ
+    // Full lists
     const [allRounds, setAllRounds] = useState<Round[]>([]);
     const [allEquipment, setAllEquipment] = useState<Equipment[]>([]);
     const [competitionsList, setCompetitionsList] = useState<Competition[]>([]);
 
-    // Danh sách hiển thị (đã lọc theo luật giải đấu)
+    // Display lists (filtered by competition rules)
     const [filteredRounds, setFilteredRounds] = useState<Round[]>([]);
     const [filteredEquipment, setFilteredEquipment] = useState<Equipment[]>([]);
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isLoadingStructure, setIsLoadingStructure] = useState(false);
 
-    // 1. Load Initial Data
+    // Load Initial Data
     useEffect(() => {
         const loadData = async () => {
             try {
@@ -53,7 +53,7 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
                 setCompetitionsList(c);
                 setAllEquipment(e);
 
-                // Mặc định hiển thị tất cả nếu không có giải đấu nào được chọn
+                // Default to showing all if no competition is selected
                 if (!preSelectedComp) {
                     setFilteredRounds(r);
                     setFilteredEquipment(e);
@@ -63,39 +63,39 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
             }
         };
         loadData();
-    }, []); // Chỉ chạy 1 lần khi mount
+    }, []); // Run only once on mount
 
-    // 2. [LOGIC MỚI] Lọc danh sách & Auto-select khi competitionId thay đổi
+    // Filter lists & Auto-select when competitionId changes
     useEffect(() => {
-        // Nếu là Practice Mode -> Cho phép chọn tất cả
+        // If Practice Mode -> Allow selecting all
         if (competitionId === 'practice') {
             setFilteredRounds(allRounds);
             setFilteredEquipment(allEquipment);
             return;
         }
 
-        // Tìm giải đấu đang chọn (có thể là preSelectedComp hoặc chọn từ dropdown)
+        // Find currently selected competition (could be preSelectedComp or selected from dropdown)
         const selectedComp = competitionsList.find(c => c.compId.toString() === competitionId) || preSelectedComp;
 
         if (selectedComp && selectedComp.details) {
             try {
                 const rules = JSON.parse(selectedComp.details);
 
-                // --- Lọc Rounds ---
+                // --- Filter Rounds ---
                 let validRounds = allRounds;
                 if (rules.rounds && rules.rounds.length > 0) {
-                    // Chỉ lấy các round có ID nằm trong danh sách cho phép
+                    // Only take rounds with IDs in the allowed list
                     validRounds = allRounds.filter(r => rules.rounds.includes(r.roundId));
                 }
                 setFilteredRounds(validRounds);
-                // Nếu chỉ có 1 round hợp lệ -> Tự chọn luôn
+                // If only 1 valid round -> Auto-select it
                 if (validRounds.length === 1) setRoundId(validRounds[0].roundId.toString());
-                else setRoundId(''); // Reset nếu có nhiều lựa chọn
+                else setRoundId(''); // Reset if there are multiple choices
 
-                // --- Lọc Equipment ---
+                // --- Filter Equipment ---
                 let validEquipment = allEquipment;
                 if (rules.divisions && rules.divisions.length > 0) {
-                    // [FIX] So sánh linh hoạt hơn (Trim + Lowercase) để tránh lỗi không khớp nhẹ
+                    // More flexible comparison (Trim + Lowercase) to avoid slight mismatch errors
                     validEquipment = allEquipment.filter(eq =>
                         rules.divisions.some((allowedDiv: string) =>
                             (allowedDiv ?? '').toString().trim().toLowerCase() === (eq.divisionType ?? '').toString().trim().toLowerCase()
@@ -103,18 +103,18 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
                     );
                 }
                 setFilteredEquipment(validEquipment);
-                // Nếu chỉ có 1 loại cung hợp lệ -> Tự chọn luôn
+                // If only 1 valid equipment type -> Auto-select it
                 if (validEquipment.length === 1) setEquipmentId(validEquipment[0].equipmentId.toString());
                 else setEquipmentId('');
 
             } catch (e) {
                 console.warn("Invalid rules JSON", e);
-                // Fallback: hiện tất cả nếu lỗi JSON
+                // Fallback: show all if JSON error
                 setFilteredRounds(allRounds);
                 setFilteredEquipment(allEquipment);
             }
         } else {
-            // Giải đấu cũ không có details -> Hiện tất cả
+            // Old competition has no details -> Show all
             setFilteredRounds(allRounds);
             setFilteredEquipment(allEquipment);
         }
@@ -231,7 +231,7 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
                                 <select
                                     className={`w-full p-3 border rounded-lg bg-white dark:bg-slate-800 appearance-none ${preSelectedComp ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                                     value={competitionId}
-                                    disabled={!!preSelectedComp} // [NEW] Khóa nếu đã chọn từ trước
+                                    disabled={!!preSelectedComp} // Lock if pre-selected
                                     onChange={e => setCompetitionId(e.target.value)}
                                 >
                                     <option value="practice">🎯 Practice Mode</option>
@@ -241,7 +241,7 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
                                         ))}
                                     </optgroup>
                                 </select>
-                                {/* Icon khóa nếu bị disabled */}
+                                {/* Lock icon if disabled */}
                                 {preSelectedComp && <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />}
                             </div>
                             {competitionId !== 'practice' && (
@@ -280,11 +280,10 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
         );
     }
 
-    // (Giữ nguyên phần UI khi đang Scoring ở dưới - không thay đổi)
     return (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
             <div className="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-xl shadow-xl flex flex-col max-h-[90vh]">
-                {/* ... UI Scoring giữ nguyên ... */}
+                {/* ... Scoring UI remains unchanged ... */}
                 <div className="bg-blue-600 text-white p-4 flex justify-between items-center rounded-t-xl">
                     <div>
                         <h2 className="font-bold text-lg">{roundStructure?.roundName}</h2>
@@ -316,7 +315,7 @@ export default function ScoreEntry({ userId, onClose, onSubmit, preSelectedComp 
                                 <span className="text-xs text-gray-500 font-medium">Arr {idx + 1}</span>
                                 <input type="text" value={val} onChange={(e) => handleArrowChange(idx, e.target.value)}
                                     className={`w-full aspect-square text-center text-2xl font-bold border-2 rounded-xl focus:ring-4 focus:ring-blue-200 outline-none
-                                        ${val === '10' || val === 'X' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : val === 'M' ? 'bg-gray-100 border-gray-300 text-gray-400' : 'dark:bg-slate-800'}`}
+                                    ${val === '10' || val === 'X' ? 'bg-yellow-50 border-yellow-400 text-yellow-700' : val === 'M' ? 'bg-gray-100 border-gray-300 text-gray-400' : 'dark:bg-slate-800'}`}
                                     placeholder="-" />
                             </div>
                         ))}
