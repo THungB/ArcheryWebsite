@@ -31,7 +31,7 @@ CREATE TABLE `competition` (
   `details` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   `location` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
   PRIMARY KEY (`comp_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=106 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=107 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -40,7 +40,7 @@ CREATE TABLE `competition` (
 
 LOCK TABLES `competition` WRITE;
 /*!40000 ALTER TABLE `competition` DISABLE KEYS */;
-INSERT INTO `competition` VALUES (1,'Summer Club Championship 2024','2024-06-15','2024-06-16',1,NULL,NULL),(2,'Weekly Shoot Nov Week 1','2024-11-01','2024-11-01',0,NULL,NULL),(101,'Spring Opening Shoot 2025','2025-12-01','2025-12-03',0,NULL,NULL),(102,'National Qualification Round','2025-11-19','2025-11-23',1,NULL,NULL),(103,'Winter Club Championship 2024','2024-12-15','2024-12-16',1,NULL,NULL),(104,'Verified Test','2025-10-30','2025-11-30',1,'{\"rounds\":[1],\"divisions\":[\"Compound\",\"Barebow Recurve\"],\"classes\":[\"60\\u002B\",\"50\\u002B\",\"Open\"]}','123 Ngo Quyen Da Nang'),(105,'Testing','2025-11-15','2025-11-30',1,'{\"rounds\":[2,1],\"divisions\":[\"Compound Barebow\",\"Recurve Barebow\"],\"classes\":[\"Open\"]}','100 Lê Thánh Tôn ');
+INSERT INTO `competition` VALUES (1,'Summer Club Championship 2024','2024-06-15','2024-06-16',1,NULL,NULL),(2,'Weekly Shoot Nov Week 1','2024-11-01','2024-11-01',0,NULL,NULL),(101,'Spring Opening Shoot 2025','2025-12-01','2025-12-03',0,NULL,NULL),(102,'National Qualification Round','2025-11-19','2025-11-23',1,NULL,NULL),(103,'Winter Club Championship 2024','2024-12-15','2024-12-16',1,NULL,NULL),(104,'Verified Test','2025-10-30','2025-11-30',1,'{\"rounds\":[1],\"divisions\":[\"Compound\",\"Barebow Recurve\"],\"classes\":[\"60\\u002B\",\"50\\u002B\",\"Open\"]}','123 Ngo Quyen Da Nang'),(105,'Testing','2025-11-15','2025-11-30',1,'{\"rounds\":[2,1],\"divisions\":[\"Compound Barebow\",\"Recurve Barebow\"],\"classes\":[\"Open\"]}','100 Lê Thánh Tôn '),(106,'Hi','2025-11-11','2025-12-04',0,'{\"rounds\":[1,2,4],\"divisions\":[\"Compound\",\"Compound Barebow\"],\"classes\":[\"Open\"]}','');
 /*!40000 ALTER TABLE `competition` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -53,4 +53,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 23:39:18
+-- Dump completed on 2025-11-22 11:21:08

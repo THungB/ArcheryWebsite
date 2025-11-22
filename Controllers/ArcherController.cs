@@ -191,41 +191,78 @@ namespace ArcheryWebsite.Controllers
             {
                 var scores = await _context.Scores
                     .Where(s => s.ArcherId == id)
+                    .Include(s => s.Round) // Quan trọng: Cần RoundName để phân loại
                     .OrderBy(s => s.DateShot)
-                    .Select(s => new { s.DateShot, s.TotalScore, s.Round.RoundName })
                     .ToListAsync();
 
                 if (!scores.Any()) return Ok(new { hasData = false });
 
-                // 1. Tính toán cơ bản
-                double average = scores.Average(s => s.TotalScore);
-                int max = scores.Max(s => s.TotalScore);
+                // 1. Lấy danh sách tất cả các loại Round mà user đã chơi
+                var roundTypes = scores.Select(s => s.Round.RoundName).Distinct().OrderBy(x => x).ToList();
 
-                // 2. Tính độ lệch chuẩn (Consistency)
-                // StdDev càng nhỏ => Bắn càng đều tay
-                double sumOfSquaresOfDifferences = scores.Select(val => (val.TotalScore - average) * (val.TotalScore - average)).Sum();
-                double stdDev = Math.Sqrt(sumOfSquaresOfDifferences / scores.Count);
+                // 2. Xử lý dữ liệu cho Biểu đồ Đường (Line Chart)
+                // Cần format: { date: "01/01", "WA 70/720": 650, "Canberra": null }
+                var allDates = scores.Select(s => s.DateShot).Distinct().OrderBy(d => d).ToList();
+                var historyData = new List<Dictionary<string, object>>();
 
-                // 3. Xu hướng (Trend) - So sánh 3 trận gần nhất với trung bình
-                var recent = scores.TakeLast(3).Average(s => s.TotalScore);
-                string trend = recent > average ? "Improving" : (recent < average - 10 ? "Declining" : "Stable");
+                foreach (var date in allDates)
+                {
+                    var entry = new Dictionary<string, object>();
+                    entry["date"] = date.ToString("dd/MM"); // Trục X
+
+                    foreach (var roundName in roundTypes)
+                    {
+                        // Tìm điểm của loại Round này vào ngày này
+                        var score = scores.FirstOrDefault(s => s.DateShot == date && s.Round.RoundName == roundName);
+                        entry[roundName] = score != null ? score.TotalScore : null;
+                    }
+                    historyData.Add(entry);
+                }
+
+                // 3. Xử lý dữ liệu cho Biểu đồ Cột Chồng (Stacked Bar Chart)
+                // Cần format: { range: "<600", "WA 70/720": 2, "Canberra": 0 }
+                var scoreRanges = new[] { "<550", "550-600", "600-650", "650-700", "700+" };
+                var distributionData = new List<Dictionary<string, object>>();
+
+                foreach (var range in scoreRanges)
+                {
+                    var entry = new Dictionary<string, object>();
+                    entry["range"] = range; // Trục X
+
+                    foreach (var roundName in roundTypes)
+                    {
+                        var roundsScores = scores.Where(s => s.Round.RoundName == roundName);
+                        int count = 0;
+
+                        if (range == "<550") count = roundsScores.Count(s => s.TotalScore < 550);
+                        else if (range == "550-600") count = roundsScores.Count(s => s.TotalScore >= 550 && s.TotalScore < 600);
+                        else if (range == "600-650") count = roundsScores.Count(s => s.TotalScore >= 600 && s.TotalScore < 650);
+                        else if (range == "650-700") count = roundsScores.Count(s => s.TotalScore >= 650 && s.TotalScore < 700);
+                        else count = roundsScores.Count(s => s.TotalScore >= 700);
+
+                        entry[roundName] = count;
+                    }
+                    distributionData.Add(entry);
+                }
+
+                // 4. Thống kê tổng quan cho AI
+                var statsByRound = scores.GroupBy(s => s.Round.RoundName)
+                    .Select(g => new
+                    {
+                        roundName = g.Key,
+                        average = Math.Round(g.Average(s => s.TotalScore), 1),
+                        best = g.Max(s => s.TotalScore),
+                        totalEvents = g.Count(),
+                        trend = g.OrderByDescending(s => s.DateShot).Take(3).Average(s => s.TotalScore) > g.Average(s => s.TotalScore) ? "Improving" : "Stable"
+                    }).ToList();
 
                 return Ok(new
                 {
                     hasData = true,
-                    overview = new
-                    {
-                        averageScore = Math.Round(average, 1),
-                        personalBest = max,
-                        consistencyRating = Math.Round(stdDev, 1), // Thấp là tốt
-                        trend = trend,
-                        totalRounds = scores.Count
-                    },
-                    history = scores.Select(s => new {
-                        date = s.DateShot.ToString("dd/MM"),
-                        score = s.TotalScore,
-                        round = s.RoundName
-                    })
+                    roundTypes = roundTypes, // Danh sách tên để Frontend vẽ Line/Bar màu
+                    history = historyData,
+                    distribution = distributionData,
+                    statsByRound = statsByRound
                 });
             }
             catch (Exception ex)

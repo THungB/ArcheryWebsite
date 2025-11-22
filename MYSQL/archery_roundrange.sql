@@ -16,37 +16,33 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `score`
+-- Table structure for table `roundrange`
 --
 
-DROP TABLE IF EXISTS `score`;
+DROP TABLE IF EXISTS `roundrange`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `score` (
-  `score_id` int NOT NULL AUTO_INCREMENT,
-  `archer_id` int NOT NULL,
+CREATE TABLE `roundrange` (
+  `id` int NOT NULL AUTO_INCREMENT,
   `round_id` int NOT NULL,
-  `comp_id` int DEFAULT NULL,
-  `date_shot` date NOT NULL,
-  `total_score` int NOT NULL,
-  PRIMARY KEY (`score_id`),
-  KEY `archer_id` (`archer_id`),
+  `range_id` int NOT NULL,
+  `sequence_number` int NOT NULL,
+  PRIMARY KEY (`id`),
   KEY `round_id` (`round_id`),
-  KEY `comp_id` (`comp_id`),
-  CONSTRAINT `score_ibfk_1` FOREIGN KEY (`archer_id`) REFERENCES `archer` (`archer_id`),
-  CONSTRAINT `score_ibfk_2` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
-  CONSTRAINT `score_ibfk_3` FOREIGN KEY (`comp_id`) REFERENCES `competition` (`comp_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2007 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `range_id` (`range_id`),
+  CONSTRAINT `roundrange_ibfk_1` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`),
+  CONSTRAINT `roundrange_ibfk_2` FOREIGN KEY (`range_id`) REFERENCES `range` (`range_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `score`
+-- Dumping data for table `roundrange`
 --
 
-LOCK TABLES `score` WRITE;
-/*!40000 ALTER TABLE `score` DISABLE KEYS */;
-INSERT INTO `score` VALUES (1,1,1,1,'2024-06-15',650),(2,3,2,1,'2024-06-15',680),(3,7,2,1,'2024-06-15',695),(4,2,1,2,'2024-11-01',600),(5,4,3,2,'2024-11-01',300),(1001,1,1,103,'2024-12-15',645),(1002,2,1,NULL,'2025-11-21',336),(1003,1,1,NULL,'2025-11-21',299),(1004,1,1,NULL,'2025-11-21',559),(2001,1,1,NULL,'2025-10-01',620),(2002,1,1,NULL,'2025-10-08',635),(2003,1,1,NULL,'2025-10-15',610),(2004,1,1,NULL,'2025-10-22',650),(2005,1,1,NULL,'2025-10-29',655),(2006,1,1,NULL,'2025-11-21',552);
-/*!40000 ALTER TABLE `score` ENABLE KEYS */;
+LOCK TABLES `roundrange` WRITE;
+/*!40000 ALTER TABLE `roundrange` DISABLE KEYS */;
+INSERT INTO `roundrange` VALUES (1,1,1,1),(2,1,2,2),(3,2,3,1),(4,2,3,2),(5,3,4,1),(6,4,7,3),(7,4,6,2),(8,4,5,1);
+/*!40000 ALTER TABLE `roundrange` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -58,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 23:39:18
+-- Dump completed on 2025-11-22 11:21:08

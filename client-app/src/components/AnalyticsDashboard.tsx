@@ -1,15 +1,25 @@
 ﻿import { useEffect, useState } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Cell } from 'recharts';
-import { BrainCircuit, TrendingUp, Target, Activity, Loader2, Sparkles, BarChart3 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { BrainCircuit, Loader2, Sparkles, Microscope } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Button } from './ui/button';
-import { archerAPI, AnalyticsData } from '../services/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
+import { archerAPI } from '../services/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+const COLORS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#9333ea', '#0891b2'];
 
 export function AnalyticsDashboard({ userId }: { userId: string }) {
-    const [data, setData] = useState<AnalyticsData | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+
+    // AI State
     const [aiAdvice, setAiAdvice] = useState<string>("");
     const [aiLoading, setAiLoading] = useState(false);
+    const [selectedRoundAI, setSelectedRoundAI] = useState<string>("all");
+    const [isDeepAnalysis, setIsDeepAnalysis] = useState(false);
 
     useEffect(() => {
         const loadAnalytics = async () => {
@@ -31,19 +41,29 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
         setAiLoading(true);
         try {
             const token = localStorage.getItem('authToken') || '';
+
+            // Lọc dữ liệu thống kê dựa trên dropdown
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let statsContext = data.statsByRound;
+            if (selectedRoundAI !== 'all') {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                statsContext = data.statsByRound.filter((r: any) => r.roundName === selectedRoundAI);
+            }
+
             const prompt = `
-                Analyze this archer's performance:
-                - Average Score: ${data.overview.averageScore}
-                - Consistency (StdDev): ${data.overview.consistencyRating} (Lower is better)
-                - Trend: ${data.overview.trend}
-                - Recent Scores: ${data.history.slice(-3).map(h => h.score).join(', ')}
+                As an expert Archery Coach, analyze the following performance data: ${JSON.stringify(statsContext)}
                 
-                Provide 3 short bullet points (format exactly like this):
-                * **Technical:** [Assessment]
-                * **Mental:** [Advice]
-                * **Drill:** [Recommendation]
+                **User Request:**
+                Mode: ${isDeepAnalysis ? "DEEP TECHNICAL ANALYSIS" : "General Overview"}
+                Scope: ${selectedRoundAI === 'all' ? "Comparing All Round Types" : selectedRoundAI}
                 
-                Start with a short 1-sentence encouraging summary.
+                **Instructions:**
+                1. Use standard Markdown formatting. Do NOT use '***'. Use '**' for bold.
+                2. If scope is 'All Round Types', YOU MUST CREATE A MARKDOWN TABLE comparing Average Score, Personal Best, and Consistency/Trend between the different rounds.
+                3. ${isDeepAnalysis
+                    ? "Provide specific technical drills based on the consistency rating. Explain 'why' the scores might be fluctuating."
+                    : "Provide 3 concise bullet points on performance trends and a short summary."}
+                4. Keep the tone encouraging but professional.
             `;
 
             const res = await fetch('http://localhost:5280/api/AI/chat', {
@@ -59,184 +79,171 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
             setAiAdvice(result.response);
         } catch (e) {
             console.error(e);
+            setAiAdvice("Could not connect to AI Coach.");
         } finally {
             setAiLoading(false);
         }
     };
 
-    // Hàm render AI Response
-    const renderAiResponse = (text: string) => {
-        const lines = text.split('\n').filter(line => line.trim() !== '');
-        return (
-            <div className="space-y-3">
-                {lines.map((line, idx) => {
-                    if (line.trim().startsWith('*')) {
-                        const content = line.replace(/^\*\s*/, '');
-                        const parts = content.split('**');
-                        if (parts.length >= 3) {
-                            return (
-                                <div key={idx} className="flex gap-3 items-start bg-slate-800/50 p-3 rounded-lg border border-slate-700/50">
-                                    <span className="text-blue-400 mt-1 shrink-0">●</span>
-                                    <div className="text-slate-200 leading-relaxed">
-                                        <span className="font-bold text-yellow-400">{parts[1]}</span>
-                                        <span>{parts[2]}</span>
-                                    </div>
-                                </div>
-                            );
-                        }
-                        return <div key={idx} className="text-slate-300 flex gap-2"><span className="text-blue-400">●</span> {content}</div>;
-                    }
-                    return <p key={idx} className="text-slate-100 font-medium text-base mb-4 italic border-l-4 border-blue-500 pl-3">{line}</p>;
-                })}
-            </div>
-        );
-    };
-
-    const getScoreDistribution = () => {
-        if (!data) return [];
-        const distribution = [
-            { range: '<600', count: 0 },
-            { range: '600-630', count: 0 },
-            { range: '630-650', count: 0 },
-            { range: '650-670', count: 0 },
-            { range: '670+', count: 0 },
-        ];
-
-        data.history.forEach(h => {
-            if (h.score < 600) distribution[0].count++;
-            else if (h.score < 630) distribution[1].count++;
-            else if (h.score < 650) distribution[2].count++;
-            else if (h.score < 670) distribution[3].count++;
-            else distribution[4].count++;
-        });
-        return distribution;
-    };
-
     if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
-    if (!data || !data.hasData) return <div className="text-center p-8 text-gray-500">Not enough data for analysis. Please submit more scores.</div>;
-
-    const distributionData = getScoreDistribution();
+    if (!data || !data.hasData) return <div className="text-center p-8 text-gray-500">Chưa có dữ liệu để phân tích.</div>;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
-            {/* 1. KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-100 shadow-sm">
-                    <CardContent className="p-6 flex items-center gap-4">
-                        <div className="p-3 bg-blue-100 rounded-full text-blue-600"><Target size={24} /></div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Average Score</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{data.overview.averageScore}</h3>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-100 shadow-sm">
-                    <CardContent className="p-6 flex items-center gap-4">
-                        <div className="p-3 bg-purple-100 rounded-full text-purple-600"><Activity size={24} /></div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Consistency (StdDev)</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{data.overview.consistencyRating}</h3>
-                            <p className="text-xs text-gray-400">{data.overview.consistencyRating < 15 ? "Very Stable" : "Variable"}</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className={`bg-gradient-to-br border-opacity-50 shadow-sm ${data.overview.trend === 'Improving' ? 'from-green-50 border-green-200' : 'from-amber-50 border-amber-200'}`}>
-                    <CardContent className="p-6 flex items-center gap-4">
-                        <div className={`p-3 rounded-full ${data.overview.trend === 'Improving' ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                            <TrendingUp size={24} />
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 font-medium">Current Trend</p>
-                            <h3 className="text-2xl font-bold text-gray-900">{data.overview.trend}</h3>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* 2. Line Chart */}
-                <Card className="shadow-md">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">Score Progression</CardTitle>
-                            <TrendingUp className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <CardDescription>Performance over last {data.overview.totalRounds} rounds</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={data.history} margin={{ top: 10, right: 10, bottom: 5, left: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                                <YAxis domain={['dataMin - 10', 'dataMax + 10']} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={30} />
-                                <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                <ReferenceLine y={data.overview.averageScore} stroke="#fbbf24" strokeDasharray="3 3" label={{ value: 'Avg', fill: '#d97706', fontSize: 10, position: 'insideLeft' }} />
-                                <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={3} dot={{ r: 4, fill: '#2563eb', strokeWidth: 2, stroke: '#fff' }} />
-                            </LineChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
+            {/* 1. Biểu đồ đa tuyến (Multi-line Chart) */}
+            <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle>Tiến độ điểm số (Theo loại vòng bắn)</CardTitle>
+                    <CardDescription>So sánh phong độ qua từng thể loại giải đấu/tập luyện</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={data.history} margin={{ top: 20, right: 30, bottom: 5, left: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="date" tick={{ fontSize: 12 }} padding={{ left: 20, right: 20 }} />
+                            <YAxis domain={['auto', 'auto']} width={40} />
+                            <Tooltip
+                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                                labelStyle={{ fontWeight: 'bold', color: '#333' }}
+                            />
+                            <Legend verticalAlign="top" height={36} />
 
-                {/* 3. Bar Chart */}
-                <Card className="shadow-md">
-                    <CardHeader className="pb-2">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">Score Distribution</CardTitle>
-                            <BarChart3 className="w-4 h-4 text-gray-400" />
-                        </div>
-                        <CardDescription>Frequency of your scores in ranges</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={distributionData} margin={{ top: 10, right: 10, bottom: 5, left: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                                <XAxis dataKey="range" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                                <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} width={20} />
-                                <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }} />
-                                <Bar dataKey="count" radius={[4, 4, 0, 0]} barSize={40}>
-                                    {distributionData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={index === 4 ? '#22c55e' : '#3b82f6'} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-            </div>
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {data.roundTypes.map((round: string, idx: number) => (
+                                <Line
+                                    key={round}
+                                    type="monotone"
+                                    dataKey={round}
+                                    stroke={COLORS[idx % COLORS.length]}
+                                    strokeWidth={3}
+                                    connectNulls={true}
+                                    dot={{ r: 4, strokeWidth: 2, fill: '#fff' }}
+                                    activeDot={{ r: 7 }}
+                                />
+                            ))}
+                        </LineChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
 
-            {/* 4. AI Coach Recommendation */}
+            {/* 2. Biểu đồ cột chồng (Stacked Bar Chart) */}
+            <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle>Phân bố điểm số</CardTitle>
+                    <CardDescription>Tần suất điểm số đạt được theo từng loại vòng</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={data.distribution} margin={{ top: 20, right: 30, bottom: 5, left: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+                            <XAxis dataKey="range" tick={{ fontSize: 12 }} />
+                            <YAxis allowDecimals={false} width={30} />
+                            <Tooltip cursor={{ fill: '#f9fafb' }} contentStyle={{ borderRadius: '8px' }} />
+                            <Legend verticalAlign="top" height={36} />
+
+                            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                            {data.roundTypes.map((round: string, idx: number) => (
+                                <Bar
+                                    key={round}
+                                    dataKey={round}
+                                    stackId="a"
+                                    fill={COLORS[idx % COLORS.length]}
+                                    radius={idx === data.roundTypes.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+                                />
+                            ))}
+                        </BarChart>
+                    </ResponsiveContainer>
+                </CardContent>
+            </Card>
+
+            {/* 3. AI Coach Section */}
             <Card className="bg-slate-900 text-white shadow-xl overflow-hidden border-none">
                 <div className="absolute top-0 right-0 p-32 bg-blue-500 rounded-full blur-[100px] opacity-20 pointer-events-none"></div>
                 <CardHeader className="pb-2 relative z-10">
                     <div className="flex items-center gap-2 text-blue-400">
                         <BrainCircuit className="w-6 h-6" />
-                        <CardTitle className="text-white">AI Performance Coach</CardTitle>
+                        <CardTitle className="text-white">AI Performance Analyst</CardTitle>
                     </div>
                     <CardDescription className="text-slate-400">
-                        Personalized insights based on your consistency and trends.
+                        Hệ thống sẽ tự động lập bảng so sánh nếu bạn chọn chế độ "Tất cả".
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="relative z-10">
-                    {aiAdvice ? (
-                        <div className="animate-in fade-in slide-in-from-bottom-2">
-                            <div className="flex items-center gap-2 mb-4 text-yellow-400 font-semibold bg-yellow-400/10 px-3 py-1 rounded-full w-fit">
-                                <Sparkles className="w-4 h-4" /> Coach's Analysis
-                            </div>
-                            {renderAiResponse(aiAdvice)}
+                <CardContent className="relative z-10 space-y-4">
+
+                    <div className="flex flex-col md:flex-row gap-4 items-end">
+                        <div className="w-full md:w-1/3">
+                            <label className="text-xs text-slate-400 mb-1.5 block font-medium">Phạm vi phân tích</label>
+                            <Select value={selectedRoundAI} onValueChange={setSelectedRoundAI}>
+                                <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-10">
+                                    <SelectValue placeholder="Select Round" />
+                                </SelectTrigger>
+                                <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                                    <SelectItem value="all">Tất cả (So sánh các giải)</SelectItem>
+                                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                                    {data.roundTypes.map((r: string) => (
+                                        <SelectItem key={r} value={r}>{r}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
-                    ) : (
-                        <div className="h-32 flex flex-col items-center justify-center text-slate-500 text-sm italic border border-dashed border-slate-700 rounded-lg bg-slate-800/30">
-                            <p>Ready to analyze your {data.overview.totalRounds} rounds of data.</p>
+
+                        <div className="w-full md:w-auto">
+                            <Button
+                                variant={isDeepAnalysis ? "default" : "secondary"}
+                                onClick={() => setIsDeepAnalysis(!isDeepAnalysis)}
+                                className={`w-full h-10 gap-2 border ${isDeepAnalysis ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}
+                            >
+                                <Microscope className="w-4 h-4" />
+                                {isDeepAnalysis ? "Chế độ: Chi tiết & Kỹ thuật" : "Chế độ: Tổng quan"}
+                            </Button>
+                        </div>
+
+                        <Button
+                            onClick={generateAiAnalysis}
+                            disabled={aiLoading}
+                            className="w-full md:flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg"
+                        >
+                            {aiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI đang lập bảng...</> : 'Phân tích ngay'}
+                        </Button>
+                    </div>
+
+                    {/* Hiển thị kết quả AI với ReactMarkdown */}
+                    {aiAdvice && (
+                        <div className="animate-in fade-in slide-in-from-bottom-2 bg-slate-800/50 p-5 rounded-xl border border-slate-700 mt-4">
+                            <div className="flex items-center gap-2 mb-4 text-yellow-400 font-semibold border-b border-slate-700/50 pb-2">
+                                <Sparkles className="w-4 h-4" /> Kết quả phân tích từ Coach AI:
+                            </div>
+
+                            {/* Khu vực render Markdown với custom components đã FIX lỗi TS */}
+                            <div className="prose prose-invert max-w-none text-sm text-slate-300">
+                                <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        // Sử dụng 'as any' để bỏ qua lỗi type 'ref' của HTML element
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        table: ({ node, ...props }) => <div className="overflow-x-auto my-4"><table className="w-full border-collapse border border-slate-600 text-left" {...props as any} /></div>,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        thead: ({ node, ...props }) => <thead className="bg-slate-700/50 text-slate-200" {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        tbody: ({ node, ...props }) => <tbody {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        tr: ({ node, ...props }) => <tr className="border-b border-slate-700 hover:bg-slate-800/50" {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        th: ({ node, ...props }) => <th className="border border-slate-600 p-3 font-bold" {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        td: ({ node, ...props }) => <td className="border border-slate-600 p-3" {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        ul: ({ node, ...props }) => <ul className="list-disc list-inside my-2 space-y-1" {...props as any} />,
+                                        // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
+                                        strong: ({ node, ...props }) => <span className="font-bold text-yellow-200" {...props as any} />,
+                                    }}
+                                >
+                                    {aiAdvice}
+                                </ReactMarkdown>
+                            </div>
                         </div>
                     )}
-
-                    <Button
-                        onClick={generateAiAnalysis}
-                        disabled={aiLoading}
-                        className="mt-6 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-blue-900/20 border-0 py-6"
-                    >
-                        {aiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Analyzing Data...</> : 'Analyze My Performance'}
-                    </Button>
                 </CardContent>
             </Card>
         </div>

@@ -16,31 +16,33 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `range`
+-- Table structure for table `round_equivalence`
 --
 
-DROP TABLE IF EXISTS `range`;
+DROP TABLE IF EXISTS `round_equivalence`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `range` (
-  `range_id` int NOT NULL AUTO_INCREMENT,
-  `distance_meters` int NOT NULL,
-  `end_count` int NOT NULL,
-  `face_size_cm` int NOT NULL DEFAULT '122',
-  PRIMARY KEY (`range_id`),
-  CONSTRAINT `range_chk_1` CHECK ((`distance_meters` in (18,20,30,40,50,60,70,90))),
-  CONSTRAINT `range_chk_2` CHECK ((`end_count` > 0))
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+CREATE TABLE `round_equivalence` (
+  `equivalence_id` int NOT NULL AUTO_INCREMENT,
+  `round_id` int NOT NULL,
+  `equivalent_round_id` int NOT NULL,
+  `valid_from` date NOT NULL DEFAULT '2000-01-01',
+  `valid_to` date DEFAULT NULL,
+  PRIMARY KEY (`equivalence_id`),
+  KEY `FK_RoundEquivalence_Round_Source` (`round_id`),
+  KEY `FK_RoundEquivalence_Round_Target` (`equivalent_round_id`),
+  CONSTRAINT `FK_RoundEquivalence_Round_Source` FOREIGN KEY (`round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE,
+  CONSTRAINT `FK_RoundEquivalence_Round_Target` FOREIGN KEY (`equivalent_round_id`) REFERENCES `round` (`round_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `range`
+-- Dumping data for table `round_equivalence`
 --
 
-LOCK TABLES `range` WRITE;
-/*!40000 ALTER TABLE `range` DISABLE KEYS */;
-INSERT INTO `range` VALUES (1,70,6,122),(2,70,6,122),(3,50,6,80),(4,30,12,80);
-/*!40000 ALTER TABLE `range` ENABLE KEYS */;
+LOCK TABLES `round_equivalence` WRITE;
+/*!40000 ALTER TABLE `round_equivalence` DISABLE KEYS */;
+/*!40000 ALTER TABLE `round_equivalence` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -52,4 +54,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-21 23:39:19
+-- Dump completed on 2025-11-22 11:21:08
