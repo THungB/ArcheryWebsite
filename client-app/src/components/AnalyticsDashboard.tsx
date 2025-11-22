@@ -42,7 +42,7 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
         try {
             const token = localStorage.getItem('authToken') || '';
 
-            // Lọc dữ liệu thống kê dựa trên dropdown
+            // Filter stats based on dropdown
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             let statsContext = data.statsByRound;
             if (selectedRoundAI !== 'all') {
@@ -86,16 +86,16 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
     };
 
     if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-blue-600" /></div>;
-    if (!data || !data.hasData) return <div className="text-center p-8 text-gray-500">Chưa có dữ liệu để phân tích.</div>;
+    if (!data || !data.hasData) return <div className="text-center p-8 text-gray-500">No data available for analysis.</div>;
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
 
-            {/* 1. Biểu đồ đa tuyến (Multi-line Chart) */}
+            {/* 1. Multi-line Chart */}
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Tiến độ điểm số (Theo loại vòng bắn)</CardTitle>
-                    <CardDescription>So sánh phong độ qua từng thể loại giải đấu/tập luyện</CardDescription>
+                    <CardTitle>Score Progression (By Round Type)</CardTitle>
+                    <CardDescription>Compare performance trends across different rounds</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -127,11 +127,11 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
                 </CardContent>
             </Card>
 
-            {/* 2. Biểu đồ cột chồng (Stacked Bar Chart) */}
+            {/* 2. Stacked Bar Chart */}
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Phân bố điểm số</CardTitle>
-                    <CardDescription>Tần suất điểm số đạt được theo từng loại vòng</CardDescription>
+                    <CardTitle>Score Distribution</CardTitle>
+                    <CardDescription>Frequency of scores achieved by round type</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[400px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -166,20 +166,20 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
                         <CardTitle className="text-white">AI Performance Analyst</CardTitle>
                     </div>
                     <CardDescription className="text-slate-400">
-                        Hệ thống sẽ tự động lập bảng so sánh nếu bạn chọn chế độ "Tất cả".
+                        The system will automatically generate a comparison table if you select "All".
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="relative z-10 space-y-4">
 
                     <div className="flex flex-col md:flex-row gap-4 items-end">
                         <div className="w-full md:w-1/3">
-                            <label className="text-xs text-slate-400 mb-1.5 block font-medium">Phạm vi phân tích</label>
+                            <label className="text-xs text-slate-400 mb-1.5 block font-medium">Analysis Scope</label>
                             <Select value={selectedRoundAI} onValueChange={setSelectedRoundAI}>
                                 <SelectTrigger className="bg-slate-800 border-slate-700 text-white h-10">
                                     <SelectValue placeholder="Select Round" />
                                 </SelectTrigger>
                                 <SelectContent className="bg-slate-800 border-slate-700 text-white">
-                                    <SelectItem value="all">Tất cả (So sánh các giải)</SelectItem>
+                                    <SelectItem value="all">All (Compare Rounds)</SelectItem>
                                     {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                     {data.roundTypes.map((r: string) => (
                                         <SelectItem key={r} value={r}>{r}</SelectItem>
@@ -195,7 +195,7 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
                                 className={`w-full h-10 gap-2 border ${isDeepAnalysis ? 'bg-purple-600 hover:bg-purple-700 border-purple-500 text-white' : 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700'}`}
                             >
                                 <Microscope className="w-4 h-4" />
-                                {isDeepAnalysis ? "Chế độ: Chi tiết & Kỹ thuật" : "Chế độ: Tổng quan"}
+                                {isDeepAnalysis ? "Mode: Deep & Technical" : "Mode: General Overview"}
                             </Button>
                         </div>
 
@@ -204,23 +204,23 @@ export function AnalyticsDashboard({ userId }: { userId: string }) {
                             disabled={aiLoading}
                             className="w-full md:flex-1 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-lg"
                         >
-                            {aiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI đang lập bảng...</> : 'Phân tích ngay'}
+                            {aiLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> AI is analyzing...</> : 'Analyze Now'}
                         </Button>
                     </div>
 
-                    {/* Hiển thị kết quả AI với ReactMarkdown */}
+                    {/* Display AI Results with ReactMarkdown */}
                     {aiAdvice && (
                         <div className="animate-in fade-in slide-in-from-bottom-2 bg-slate-800/50 p-5 rounded-xl border border-slate-700 mt-4">
                             <div className="flex items-center gap-2 mb-4 text-yellow-400 font-semibold border-b border-slate-700/50 pb-2">
-                                <Sparkles className="w-4 h-4" /> Kết quả phân tích từ Coach AI:
+                                <Sparkles className="w-4 h-4" /> Coach AI Analysis Results:
                             </div>
 
-                            {/* Khu vực render Markdown với custom components đã FIX lỗi TS */}
+                            {/* Markdown render area with fixed TS errors */}
                             <div className="prose prose-invert max-w-none text-sm text-slate-300">
                                 <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
-                                        // Sử dụng 'as any' để bỏ qua lỗi type 'ref' của HTML element
+                                        // Use 'as any' to bypass HTML element 'ref' type errors
                                         // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
                                         table: ({ node, ...props }) => <div className="overflow-x-auto my-4"><table className="w-full border-collapse border border-slate-600 text-left" {...props as any} /></div>,
                                         // eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
