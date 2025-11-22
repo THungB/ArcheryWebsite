@@ -14,7 +14,6 @@ public partial class Competition
     public string? Location { get; set; }
     [Column("details")]
     public string? Details { get; set; }
-
     public bool IsClubChampionship { get; set; } = false;
     public virtual ICollection<Score> Scores { get; set; } = new List<Score>();
 }
