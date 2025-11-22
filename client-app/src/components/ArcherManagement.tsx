@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Plus, Edit, Trash2, Search, Mail, Phone, X, Loader2 } from 'lucide-react';
 import { recorderAPI } from '../services/api';
 
+// Định nghĩa kiểu dữ liệu cho Archer
 interface Archer {
     archerId: number;
     firstName: string;
@@ -29,6 +30,8 @@ export default function ArcherManagement() {
         defaultEquipmentId: '1',
     });
 
+    // [FIX] Thay any[] bằng Archer[]
+    // Lưu ý: Trong thực tế bạn sẽ load dữ liệu này từ API (useEffect)
     const archers: Archer[] = [];
 
     const filteredArchers = archers.filter(
@@ -83,6 +86,7 @@ export default function ArcherManagement() {
             });
 
         } catch (err) {
+            // [FIX] Xử lý lỗi an toàn thay vì dùng 'any'
             const errorMessage = err instanceof Error ? err.message : 'Failed to create archer';
             setError(errorMessage);
         } finally {

@@ -16,7 +16,7 @@ namespace ArcheryWebsite.Controllers
             _context = context;
         }
 
-        // GET: api/StagingScore (Get history - Fixed Circular Reference error)
+        // GET: api/StagingScore (Lấy lịch sử - Đã sửa lỗi Circular Reference)
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetStagingScores()
         {
@@ -29,7 +29,7 @@ namespace ArcheryWebsite.Controllers
                     .OrderByDescending(ss => ss.DateTime)
                     .ToListAsync();
 
-                // MAP TO DTO TO AVOID JSON CYCLE ERROR
+                // MAP SANG DTO ĐỂ TRÁNH LỖI JSON CYCLE
                 var response = stagingScores.Select(ss => new StagingScoreResponseDto
                 {
                     StagingId = ss.StagingId,
@@ -49,13 +49,13 @@ namespace ArcheryWebsite.Controllers
             }
             catch (Exception ex)
             {
-                // Log error to server console for easy debugging
+                // Ghi log lỗi ra console server để dễ debug
                 Console.WriteLine($"Error getting history: {ex.Message}");
                 return StatusCode(500, new { message = "Error retrieving staging scores", error = ex.Message });
             }
         }
 
-        // GET: api/StagingScore/pending (Added safe try-catch)
+        // GET: api/StagingScore/pending (Đã thêm try-catch an toàn)
         [HttpGet("pending")]
         public async Task<ActionResult<IEnumerable<StagingScoreResponseDto>>> GetPendingScores()
         {
@@ -90,6 +90,9 @@ namespace ArcheryWebsite.Controllers
                 return StatusCode(500, new { message = "Error retrieving pending scores", error = ex.Message });
             }
         }
+
+        // ... GIỮ NGUYÊN CÁC HÀM KHÁC (GetStagingScore, CreateStagingScore, ApproveScore, RejectScore, DeleteStagingScore) ...
+        // (Bạn chỉ cần copy đè 2 hàm Get ở trên vào file hiện tại là được)
 
         // GET: api/StagingScore/5
         [HttpGet("{id}")]
@@ -165,7 +168,6 @@ namespace ArcheryWebsite.Controllers
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-
                 var stagingScore = await _context.Stagingscores.FindAsync(id);
                 if (stagingScore == null) return NotFound("Staging score not found");
                 if (stagingScore.Status == "approved") return BadRequest("Already approved");
@@ -254,7 +256,7 @@ namespace ArcheryWebsite.Controllers
                 stagingScore.Status = "approved";
                 stagingScore.RawScore = grandTotal;
 
-                // Write system log
+                // [NEW] Ghi log hệ thống
                 var log = new SystemLog
                 {
                     Timestamp = DateTime.Now,
@@ -295,7 +297,7 @@ namespace ArcheryWebsite.Controllers
             if (stagingScore == null) return NotFound();
             stagingScore.Status = "rejected";
 
-            // Log rejection
+            // [NEW] Log rejection
             _context.SystemLogs.Add(new SystemLog
             {
                 Timestamp = DateTime.Now,

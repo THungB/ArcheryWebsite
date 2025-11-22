@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+// [FIX] Đã xóa FileText khỏi import vì không dùng
 import { Shield, Activity, Database, Users, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
@@ -112,7 +113,8 @@ export function AdminPanel() {
                 <TabsContent value="logs">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Recent Activity</CardTitle>                           
+                            <CardTitle>Recent Activity</CardTitle>
+                            {/* [FIX] Đã thêm CardDescription vào đây để sử dụng biến import */}
                             <CardDescription>Real-time log of system events and user actions.</CardDescription>
                         </CardHeader>
                         <CardContent>

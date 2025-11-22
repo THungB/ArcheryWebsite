@@ -41,7 +41,7 @@ public partial class Archer
             if (age >= 60 && age < 70) return "60+ (Veteran)";
             if (age >= 70) return "70+";
 
-            return "Open"; 
+            return "Open"; // 21 - 49
         }
     }
 }

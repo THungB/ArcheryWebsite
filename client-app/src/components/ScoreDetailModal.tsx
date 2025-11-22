@@ -2,7 +2,7 @@ import { Target, Calendar, Trophy } from 'lucide-react';
 
 interface ScoreDetailModalProps {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    score: any; 
+    score: any; // Dữ liệu chi tiết phức tạp, tạm thời dùng any hoặc định nghĩa Interface chi tiết nếu cần
     onClose: () => void;
 }
 

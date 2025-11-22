@@ -1,4 +1,7 @@
-﻿namespace ArcheryWebsite.Models;
+﻿using System;
+using System.Collections.Generic;
+
+namespace ArcheryWebsite.Models;
 
 public partial class Score
 {

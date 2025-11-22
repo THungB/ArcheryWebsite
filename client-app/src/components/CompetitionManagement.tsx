@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
+// [FIX] Removed unused 'AlertCircle'
 import { Plus, Edit, Trash2, Calendar, X, MapPin, Trophy, RefreshCcw, Settings, CheckCircle } from 'lucide-react';
+// [FIX] Removed unused 'Equipment'
 import { commonAPI, Competition, Round } from '../services/api';
 import { toast } from 'sonner';
 
-// Competition rules configuration from AA Rules/PDF documents
+// Cấu hình luật thi đấu từ tài liệu AA Rules/PDF
 const DIVISIONS = [
     "Recurve",
     "Compound",
@@ -17,14 +19,14 @@ const AGE_CLASSES = [
     "Open", "50+", "60+", "70+", "Under 21", "Under 18", "Under 16", "Under 14"
 ];
 
-// Interface for the form
+// Interface cho form
 interface CompetitionFormData {
     compName: string;
     startDate: string;
     endDate: string;
     location: string;
     isClubChampionship: boolean;
-    // Detailed data (Restrictions)
+    // Dữ liệu chi tiết (Restrictions)
     allowedRoundIds: number[];
     allowedDivisions: string[];
     allowedClasses: string[];
@@ -69,17 +71,20 @@ export default function CompetitionManagement() {
         }
     };
 
-    // Logic to parse JSON from DB to Form
+    // Xử lý logic parse JSON từ DB ra Form
     const handleEdit = (comp: Competition) => {
         let details = { rounds: [], divisions: [], classes: [] };
         try {
             if (comp.details) details = JSON.parse(comp.details);
         } catch (e) { console.error("JSON Parse Error", e); }
 
+        // [FIX QUAN TRỌNG] Lọc dữ liệu: Chỉ giữ lại những giá trị khớp với danh sách hiện tại (DIVISIONS, AGE_CLASSES)
+        // Các giá trị cũ (sai chính tả, đổi tên...) sẽ bị loại bỏ tự động.
+
         const validDivisions = (details.divisions || []).filter((d: string) => DIVISIONS.includes(d));
         const validClasses = (details.classes || []).filter((c: string) => AGE_CLASSES.includes(c));
 
-        // For Rounds, check if the ID still exists in availableRounds
+        // Với Rounds, kiểm tra xem ID đó có còn tồn tại trong danh sách availableRounds không
         const validRoundIds = (details.rounds || []).filter((id: number) =>
             availableRounds.some(r => r.roundId === id)
         );
@@ -91,15 +96,15 @@ export default function CompetitionManagement() {
             location: comp.location || '',
             isClubChampionship: comp.isClubChampionship,
             allowedRoundIds: validRoundIds,
-            allowedDivisions: validDivisions, 
-            allowedClasses: validClasses     
+            allowedDivisions: validDivisions, // Dữ liệu đã được làm sạch
+            allowedClasses: validClasses      // Dữ liệu đã được làm sạch
         });
         setSelectedCompId(comp.compId);
         setIsEditing(true);
         setShowDialog(true);
     };
 
-    // Handle Form Submit logic (Create or Update)
+    // Xử lý logic Submit form (Tạo mới hoặc Cập nhật)
     const handleSubmit = async () => {
         if (!formData.compName || !formData.startDate || !formData.endDate) {
             toast.error("Event Name and Dates are required!");
@@ -108,7 +113,7 @@ export default function CompetitionManagement() {
 
         setSaving(true);
 
-        // Package configuration details into JSON
+        // Đóng gói cấu hình chi tiết thành JSON
         const detailsJson = JSON.stringify({
             rounds: formData.allowedRoundIds,
             divisions: formData.allowedDivisions,
@@ -138,7 +143,7 @@ export default function CompetitionManagement() {
             resetForm();
             loadData();
         } catch (error: unknown) {
-            // Replaced 'any' with 'unknown' and safe error handling
+            // [FIX] Replaced 'any' with 'unknown' and safe error handling
             console.error("Submit Error:", error);
             const msg = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Operation failed: ${msg}`);
@@ -163,13 +168,13 @@ export default function CompetitionManagement() {
             toast.success("Deleted successfully");
             loadData();
         } catch (error) {
-            // Used the error variable to avoid 'unused variable' warning
+            // [FIX] Used the error variable to avoid 'unused variable' warning
             console.error("Delete failed", error);
             toast.error("Failed to delete");
         }
     };
 
-    // Replaced 'any' with generic <T> for type safety
+    // [FIX] Replaced 'any' with generic <T> for type safety
     const toggleItem = <T,>(list: T[], item: T) => {
         return list.includes(item) ? list.filter(i => i !== item) : [...list, item];
     };
@@ -263,7 +268,7 @@ export default function CompetitionManagement() {
                                         <div className="relative">
                                             <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                                             <input type="text" className="w-full pl-10 p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 outline-none dark:bg-slate-800 dark:border-slate-600"
-                                                placeholder="e.g., 123 Main Street, City"
+                                                placeholder="e.g., 123 Hai Phong, Da Nang"
                                                 value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                                         </div>
                                     </div>
@@ -374,7 +379,7 @@ export default function CompetitionManagement() {
 function CompetitionItem({ comp, onEdit, onDelete }: { comp: Competition, onEdit: () => void, onDelete: () => void }) {
     const isPast = new Date(comp.endDate) < new Date();
 
-    // Helper to display info from JSON details if available
+    // Helper để hiển thị thông tin từ JSON details nếu có
     let detailsCount = 0;
     try {
         if (comp.details) {

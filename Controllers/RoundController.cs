@@ -227,8 +227,8 @@ namespace ArcheryWebsite.Controllers
                     RangeId = rr.RangeId,
                     DistanceMeters = rr.Range.DistanceMeters,
                     EndCount = rr.Range.EndCount,
-                    ArrowsPerEnd = 6, 
-                    FaceSizeCm = rr.Range.FaceSizeCm 
+                    ArrowsPerEnd = 6, // Giả định mặc định, có thể thêm cột này vào DB nếu cần
+                    FaceSizeCm = rr.Range.FaceSizeCm // [UPDATED] Map FaceSize
                 }).ToList()
             };
 
